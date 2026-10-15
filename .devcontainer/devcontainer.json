@@ -1,10 +1,13 @@
 {
-  "name": "TurtleBot-Navigation - MuJoCo and test environment",
-  "build": { "dockerfile": "Dockerfile" },
-  "postCreateCommand": "python -m pip install --upgrade pip && python -m pip install -e '.[test]'",
+  "name": "TurtleBot-Navigation - MuJoCo (Debian Python 3.11)",
+  "build": {
+    "dockerfile": "Dockerfile"
+  },
+  "postCreateCommand": "bash .devcontainer/setup.sh",
   "remoteEnv": {
     "MUJOCO_GL": "osmesa",
-    "MPLBACKEND": "Agg"
+    "MPLBACKEND": "Agg",
+    "LIBGL_ALWAYS_SOFTWARE": "1"
   },
   "customizations": {
     "vscode": {

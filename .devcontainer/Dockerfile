@@ -1,3 +1,5 @@
+# Debian/glibc is required so pip can install prebuilt MuJoCo and OpenCV wheels.
+# The previous session was downloading musllinux packages and compiling MuJoCo.
 FROM mcr.microsoft.com/devcontainers/python:1-3.11-bookworm
 
 RUN apt-get update \
@@ -6,5 +8,6 @@ RUN apt-get update \
        libglfw3 libglew2.2 libegl1 ffmpeg \
     && rm -rf /var/lib/apt/lists/*
 
-ENV MUJOCO_GL=osmesa
-ENV MPLBACKEND=Agg
+ENV MUJOCO_GL=osmesa \
+    MPLBACKEND=Agg \
+    LIBGL_ALWAYS_SOFTWARE=1
