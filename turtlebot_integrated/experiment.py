@@ -89,7 +89,12 @@ def run_trial(cfg:Config,backend:str,scenario_name:str,seed:int,outdir:Path, cap
                 collision=sim.collision,innovation_nis=ekf.last_nis,
                 gyro_z_rad_s=packet.gyro_z_rad_s,gyro_used=ekf.last_used_gyro,
                 camera_update_accepted=bool(accepted),
-                odom_minus_gyro_delta_yaw_rad=ekf.last_odom_minus_gyro))
+                odom_minus_gyro_delta_yaw_rad=ekf.last_odom_minus_gyro,
+                nav_stop_reason=nav.last_stop_reason,
+                front_clearance_m=(nav.last_front_clearance_m
+                                   if math.isfinite(nav.last_front_clearance_m) else None),
+                waypoint_index=nav.idx,
+                target_heading_error_rad=nav.last_target_bearing_rad))
             if writer is not None and k%6==0:
                 try:
                     from .video import diagnostic_frame

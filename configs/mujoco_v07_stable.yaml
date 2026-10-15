@@ -1,0 +1,13 @@
+# Second v0.7 candidate: lower speed and gentler steering.
+# No ground truth used for control.
+odom_wheel_radius: 0.0356
+odom_wheel_separation: 0.1980
+use_gyro_yaw: true
+gyro_yaw_weight: 0.98
+camera_detection_mode: multiscale
+lqr_steering_scale: 0.14
+lqr_forward_heading_cutoff_rad: 1.35
+lqr_turn_kp: 1.0
+lqr_heading_speed_scheduling: true
+lqr_speed_limit_m_s: 0.13
+nav_lookahead_m: 0.60

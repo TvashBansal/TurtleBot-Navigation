@@ -21,9 +21,11 @@ class LQRTracker:
             return 0.0,0.0
         theta_target=math.atan2(dy,dx)
         angle=wrap(theta_target-estimate[2])
-        # Turn-in-place if target outside heading cone, rather than driving into obstacles.
-        if abs(angle)>1.05:
-            return 0.0,float(np.clip(2.0*angle,-self.c.max_omega,self.c.max_omega))
+        # Turn in place only for large bearing errors. The threshold and
+        # proportional turn gain are parameters of the experimental controller.
+        if abs(angle)>self.c.lqr_forward_heading_cutoff_rad:
+            return 0.0,float(np.clip(self.c.lqr_turn_kp*angle,
+                                     -self.c.max_omega,self.c.max_omega))
         vref=min(self.c.max_speed*.78,max(.07,distance*.55))
         wref=0.0
         # Error in body reference frame.
@@ -42,6 +44,15 @@ class LQRTracker:
         except np.linalg.LinAlgError:
             v,vomega=vref+0.7*ex,1.5*angle
         # Reverse is disabled for safety; rotate instead.
-        v=float(np.clip(v,0,self.c.max_speed))
+        # LQR steering frequently saturated at small (~0.3 rad) bearing
+        # errors on v0.5. Scale the yaw correction *before* saturation.
+        vomega *= self.c.lqr_steering_scale
+        limit=self.c.max_speed if self.c.lqr_speed_limit_m_s is None else min(
+            self.c.max_speed,self.c.lqr_speed_limit_m_s)
+        v=float(np.clip(v,0,limit))
+        # At high heading errors, reduce translation but retain turning.
+        # Heading is computed from the estimate, never simulator truth.
+        if self.c.lqr_heading_speed_scheduling:
+            v *= max(0.10, math.cos(angle))
         vomega=float(np.clip(vomega,-self.c.max_omega,self.c.max_omega))
         return v,vomega

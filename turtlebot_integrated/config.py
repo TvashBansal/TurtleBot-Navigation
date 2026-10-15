@@ -20,6 +20,13 @@ class Config:
     dt: float = 0.08
     max_speed: float = 0.22
     max_omega: float = 1.6
+    # Optional v0.7 LQR waypoint-tracking experiment. Defaults preserve v0.6.
+    nav_lookahead_m: float = 0.33
+    lqr_steering_scale: float = 1.0
+    lqr_forward_heading_cutoff_rad: float = 1.05
+    lqr_turn_kp: float = 2.0
+    lqr_heading_speed_scheduling: bool = False
+    lqr_speed_limit_m_s: float | None = None
     lidar_beams: int = 72
     lidar_max_range: float = 3.2
     lidar_noise: float = 0.015

@@ -47,3 +47,7 @@ class StepLog:
     gyro_used: bool = False
     camera_update_accepted: bool = False
     odom_minus_gyro_delta_yaw_rad: float | None = None
+    nav_stop_reason: str | None = None
+    front_clearance_m: float | None = None
+    waypoint_index: int | None = None
+    target_heading_error_rad: float | None = None
