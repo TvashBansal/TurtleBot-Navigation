@@ -11,8 +11,10 @@ class PoseEKF:
         self.x = np.array(initial,dtype=float)
         self.P = np.diag([0.09**2,0.09**2,0.12**2])
         self.last_nis: float | None = None
+        self.last_used_gyro = False
+        self.last_odom_minus_gyro: float | None = None
 
-    def predict(self, dl:float, dr:float):
+    def predict(self, dl:float, dr:float, gyro_delta_yaw: float | None = None):
         """Wheel increments (radians), from measured encoders, NOT simulator pose."""
         c=self.cfg
         # Calibrate encoder-to-body displacement without changing the physical
@@ -22,7 +24,18 @@ class PoseEKF:
         if radius <= 0 or separation <= 0:
             raise ValueError('Odometry wheel radius and separation must be positive')
         ds=radius*(dl+dr)*0.5
-        dtheta=radius*(dr-dl)/separation
+        wheel_dtheta=radius*(dr-dl)/separation
+        if not 0 <= c.gyro_yaw_weight <= 1:
+            raise ValueError('gyro_yaw_weight must be between 0 and 1')
+        self.last_used_gyro=bool(c.use_gyro_yaw and gyro_delta_yaw is not None
+                                 and np.isfinite(gyro_delta_yaw))
+        blend=c.gyro_yaw_weight if self.last_used_gyro else 0.0
+        self.last_odom_minus_gyro=(wrap(wheel_dtheta-gyro_delta_yaw)
+                                  if self.last_used_gyro else None)
+        # Encoder distance + blended encoder/IMU yaw increments, all measured.
+        # Gyro does not provide absolute yaw, so visual updates remain essential.
+        valid_gyro_delta=float(gyro_delta_yaw) if self.last_used_gyro else 0.0
+        dtheta=(1-blend)*wheel_dtheta+blend*valid_gyro_delta
         mid=self.x[2]+0.5*dtheta
         self.x[0] += ds*math.cos(mid)
         self.x[1] += ds*math.sin(mid)
@@ -33,9 +46,14 @@ class PoseEKF:
         # Encoder uncertainty is mapped into SE(2) process covariance.
         G=np.array([[radius*0.5*math.cos(mid),radius*0.5*math.cos(mid)],
                     [radius*0.5*math.sin(mid),radius*0.5*math.sin(mid)],
-                    [-radius/separation,radius/separation]])
+                    [-(1-blend)*radius/separation,(1-blend)*radius/separation]])
         var=(c.encoder_noise_rad**2)+.0001*(abs(dl)+abs(dr))
         Q=G @ (np.eye(2)*var) @ G.T + np.diag([1e-6,1e-6,2e-6])
+        if self.last_used_gyro:
+            # Angular-rate noise integrated for one sample, with a conservative
+            # extra modelling floor. Bias is *not* claimed to be estimated.
+            Q[2,2]+=blend**2*((c.gyro_noise_rad_s*c.dt)**2
+                                +(c.gyro_bias_rad_s*c.dt)**2+1e-5)
         self.P=F@self.P@F.T+Q
         self.P=(self.P+self.P.T)*.5
 

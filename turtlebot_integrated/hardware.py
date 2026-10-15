@@ -13,6 +13,8 @@ class HardwareStatus:
     camera_timestamp: float | None
     encoder_ready: bool
     scan_ready: bool
+    imu_timestamp: float | None = None
+    imu_ready: bool = False
 
 class SensorBridge:
     def __init__(self,c:Config):
@@ -20,6 +22,7 @@ class SensorBridge:
         self.encoders=None;self.scan=None;self.camera=None
         self.encoder_at=None;self.scan_at=None;self.camera_at=None
         self.camera_consumed_at=None
+        self.gyro_z=None;self.gyro_at=None
 
     def encoder_update(self,left:float,right:float,stamp:float):
         self.encoders=(float(left),float(right));self.encoder_at=float(stamp)
@@ -37,16 +40,26 @@ class SensorBridge:
     def camera_update(self,detection:CameraDetection | None,stamp:float):
         self.camera=detection;self.camera_at=float(stamp)
 
+    def imu_update(self,gyro_z_rad_s:float,stamp:float):
+        if math.isfinite(gyro_z_rad_s):
+            self.gyro_z=float(gyro_z_rad_s);self.gyro_at=float(stamp)
+
     def packet(self):
         if self.encoders is None or self.scan is None: return None
         fresh_cam=self.camera if self.camera_at != self.camera_consumed_at else None
         self.camera_consumed_at=self.camera_at
-        return SensorPacket(*self.encoders,self.scan,fresh_cam)
+        # Do not fuse stale IMU messages. Incomplete hardware wiring gracefully
+        # falls back to pure encoder odometry, retaining default dry-run safety.
+        recent_gyro=(self.gyro_z if (self.gyro_at is not None and
+                    abs(self.encoder_at-self.gyro_at)<.35) else None)
+        return SensorPacket(*self.encoders,self.scan,fresh_cam,recent_gyro)
 
     def status(self,now:float):
         return HardwareStatus(now,self.encoder_at,self.scan_at,self.camera_at,
                               self.encoder_at is not None and now-self.encoder_at<.35,
-                              self.scan_at is not None and now-self.scan_at<.35)
+                              self.scan_at is not None and now-self.scan_at<.35,
+                              self.gyro_at,
+                              self.gyro_at is not None and 0 <= now-self.gyro_at<.35)
 
 class SafetyGate:
     """Stop on missing fresh encoders/scan and unseen marker in last metre of approach."""
@@ -61,6 +74,8 @@ class SafetyGate:
         if not status.encoder_ready or not status.scan_ready:
             return 0.0,0.0,'missing/stale encoder or LiDAR message'
         if estimate is None:return 0.0,0.0,'missing estimated pose'
+        if self.c.use_gyro_yaw and not status.imu_ready:
+            return 0.0,0.0,'missing/stale IMU with gyro fusion enabled'
         distance=math.hypot(estimate[0]-self.c.dock_pose[0],estimate[1]-self.c.dock_pose[1])
         if distance<.75 and (self.last_marker_seen is None or status.timestamp-self.last_marker_seen>2.0):
             return 0.0,0.0,'no recent visual marker at docking approach'

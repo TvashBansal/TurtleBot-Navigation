@@ -1,0 +1,8 @@
+# Experimental sensor fusion, NOT a verified successful MuJoCo configuration.
+# Inherits default config. Keeps the tested v0.4 odometry calibration.
+odom_wheel_radius: 0.0356
+odom_wheel_separation: 0.1980
+use_gyro_yaw: true
+gyro_yaw_weight: 0.98
+gyro_noise_rad_s: 0.015
+gyro_bias_rad_s: 0.003

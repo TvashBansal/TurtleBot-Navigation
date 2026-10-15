@@ -29,6 +29,7 @@ class SensorPacket:
     encoder_right: float
     scan: Scan
     camera: CameraDetection | None
+    gyro_z_rad_s: float | None = None  # optional IMU yaw angular velocity, base_link frame
 
 @dataclass
 class StepLog:
@@ -42,3 +43,7 @@ class StepLog:
     distance_to_goal: float
     collision: bool
     innovation_nis: float | None = None
+    gyro_z_rad_s: float | None = None
+    gyro_used: bool = False
+    camera_update_accepted: bool = False
+    odom_minus_gyro_delta_yaw_rad: float | None = None

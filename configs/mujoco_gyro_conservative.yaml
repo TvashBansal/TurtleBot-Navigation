@@ -1,0 +1,9 @@
+# Experimental comparison: identical gyro fusion plus lower commanded turn rate.
+# This tests the hypothesis that sustained high angular velocity causes wheel slip.
+odom_wheel_radius: 0.0356
+odom_wheel_separation: 0.1980
+use_gyro_yaw: true
+gyro_yaw_weight: 0.98
+gyro_noise_rad_s: 0.015
+gyro_bias_rad_s: 0.003
+max_omega: 0.75

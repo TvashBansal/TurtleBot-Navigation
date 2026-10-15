@@ -1,39 +1,46 @@
-TurtleBot-Navigation - camera UV correction, v0.3
+TurtleBot-Navigation v0.5 — Experimental IMU yaw-rate support
+==============================================================
 
-WHY:
-The real MuJoCo camera probe detected the ArUco tag only after reflecting
-its RGB frame horizontally or vertically. Mirrored default MJCF box-face
-texture coordinates are the likely reason. The correction reflects only the
-image used as the MJCF marker texture, leaving the rendered camera frame
-and its optical bearing coordinates unchanged. It does NOT modify your
-original assets/aruco_0.png or any existing saved experiment.
+This update is NOT proof of successful closed-loop MuJoCo navigation.
+The prior v0.4 run failed; this is an opt-in test of the IMU hypothesis.
 
-FILES: upload the following, preserving folder paths:
-  turtlebot_integrated/mujoco_backend.py  (REPLACE)
-  scripts/diagnose_camera_uv.py           (NEW)
-  tests/test_mujoco_camera_uv.py          (NEW)
+IMPORTANT: The ZIP is just for downloading all files to your laptop.
+Extract it locally and upload each individual file into its EXACT matching
+GitHub folder, then commit them to main. Do NOT upload the ZIP to GitHub.
+Do NOT overwrite the whole repository.
 
-IN CODESPACES:
+REPLACE these existing files:
+  turtlebot_integrated/config.py
+  turtlebot_integrated/types.py
+  turtlebot_integrated/ekf.py
+  turtlebot_integrated/experiment.py
+  turtlebot_integrated/mujoco_backend.py
+  turtlebot_integrated/kinematic.py
+  turtlebot_integrated/hardware.py
+  turtlebot_integrated/ros2_bridge.py
+
+ADD these new files:
+  configs/mujoco_gyro_candidate.yaml
+  configs/mujoco_gyro_conservative.yaml
+  scripts/diagnose_gyro_motion.py
+  tests/test_gyro_fusion.py
+  docs/GYRO_V05_README.md
+
+Codespaces, after GitHub commit:
   cd /workspaces/TurtleBot-Navigation
+  git status --short
   git pull --ff-only origin main
   source .venv/bin/activate
   export MUJOCO_GL=osmesa MPLBACKEND=Agg
   python -m pytest -q
-  python scripts/diagnose_camera_uv.py
+  python scripts/diagnose_gyro_motion.py
 
-Inspect outputs/diagnostics/camera_uv/{center,marker_left,marker_right}.png
-and outputs/diagnostics/camera_uv/camera_uv_report.json. Send the diagnostic
-console output, especially camera distances, bearings and EKF acceptance.
-If center is detected and geometry seems physically plausible, rerun
-nominal MuJoCo without video first:
-  python -m turtlebot_integrated.cli run --backend mujoco --scenario nominal --seed 7 --out outputs/mujoco_nominal_camera_fix
+If diagnostic shows gyro aiding yaw accuracy, then follow the A/B closed-loop
+commands in docs/GYRO_V05_README.md. Keep each run in outputs/ until verified.
 
-IMPORTANT:
-* This is a hypothesis-driven correction that could not be physics-tested
-  in the package creation environment (MuJoCo unavailable there).
-* The initial 2-second turning trial showed encoder-predicted yaw 1.0808
-  rad versus physics yaw 0.9429 rad (~14.6% discrepancy). One data point
-  does not justify modifying EKF wheel geometry. Evaluate repeat trials and
-  camera innovation before calibrating effective odometry.
-* Keep unsuccessful trials under outputs/ until reviewed. The controller
-  must NEVER read MuJoCo truth to control the robot.
+Design boundaries:
+  - MuJoCo `gyro` measures yaw rate, not simulator truth pose.
+  - EKF prediction is still based on wheel encoders + optionally IMU yaw-rate.
+  - EKF camera update still fuses ArUco range/bearing when available.
+  - Old runs remain comparable by keeping gyro fusion opt-in and OFF by default.
+  - Hardware ROS2 /imu interface is not calibrated or physically validated.

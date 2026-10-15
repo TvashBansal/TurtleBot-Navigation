@@ -68,6 +68,7 @@ def scene_xml(c: Config,s:Scenario, marker_path:Path) -> str:
             <geom name="right_wheel_geom" type="cylinder" quat="0.707107 -0.707107 0 0" size="0.033 0.010" mass="0.085" rgba="0.05 0.05 0.07 1" friction="1.8 0.002 0.0001"/>
         </body>
         <geom name="rear_castor" type="sphere" pos="-0.085 0 -0.065" size="0.020" mass="0.012" friction="0.03 0.002 0.0001" rgba="0.6 0.6 0.6 1"/>
+        <site name="imu_site" pos="0 0 0.03" size="0.005"/>
         <camera name="front_camera" pos="{c.camera_offset_x_m} 0 {c.camera_height_m-0.088}" xyaxes="0 -1 0 0 0 1" fovy="{c.camera_fovy_deg}" resolution="{c.camera_width} {c.camera_height}"/>
         {lidar_sites}
       </body>
@@ -75,6 +76,7 @@ def scene_xml(c: Config,s:Scenario, marker_path:Path) -> str:
     <sensor>
         <jointpos name="enc_left" joint="left_joint"/>
         <jointpos name="enc_right" joint="right_joint"/>
+        <gyro name="imu_gyro" site="imu_site"/>
         {lidar_sensors}
     </sensor>
     <actuator>
@@ -121,6 +123,7 @@ class MuJoCoBackend:
         self.scan_angles=np.linspace(-math.pi,math.pi,c.lidar_beams,endpoint=False)
         self.left_sid=mujoco.mj_name2id(self.model,mujoco.mjtObj.mjOBJ_SENSOR,'enc_left')
         self.right_sid=mujoco.mj_name2id(self.model,mujoco.mjtObj.mjOBJ_SENSOR,'enc_right')
+        self.gyro_sid=mujoco.mj_name2id(self.model,mujoco.mjtObj.mjOBJ_SENSOR,'imu_gyro')
         self.ray_sids=[mujoco.mj_name2id(self.model,mujoco.mjtObj.mjOBJ_SENSOR,f'range_{i:03d}') for i in range(c.lidar_beams)]
         self.body_id=mujoco.mj_name2id(self.model,mujoco.mjtObj.mjOBJ_BODY,'base')
         mujoco.mj_forward(self.model,self.data)
@@ -156,8 +159,14 @@ class MuJoCoBackend:
             if camera is not None:
                 camera.distance+=float(self.rng.normal(0,c.camera_noise_range*.4*self.s.noise_multiplier))
                 camera.bearing+=float(self.rng.normal(0,c.camera_noise_bearing*.4*self.s.noise_multiplier))
+        # MuJoCo gyro is a legitimate 3-axis angular-velocity sensor expressed
+        # in imu_site's local frame. Using component z is NOT reading true yaw.
+        gyro_start=int(self.model.sensor_adr[self.gyro_sid])
+        gyro_z=float(self.data.sensordata[gyro_start+2])
+        gyro_z+=c.gyro_bias_rad_s
+        gyro_z+=float(self.rng.normal(0,c.gyro_noise_rad_s*self.s.noise_multiplier))
         return SensorPacket(self._sensor(self.left_sid),self._sensor(self.right_sid),
-                            Scan(d,self.scan_angles,c.lidar_max_range),camera)
+                            Scan(d,self.scan_angles,c.lidar_max_range),camera,gyro_z)
 
     def step(self,v:float,w:float):
         c=self.c

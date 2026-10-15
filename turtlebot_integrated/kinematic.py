@@ -13,6 +13,7 @@ class KinematicTestBackend:
         self.left=0.0;self.right=0.0;self.time=0.0
         self.collision=False
         self.last_cmd=(0.0,0.0)
+        self.gyro_z=0.0
 
     def get_truth(self):return self.truth.copy()
 
@@ -42,8 +43,9 @@ class KinematicTestBackend:
         if visible:
             det=CameraDetection(float(dist+self.rng.normal(0,c.camera_noise_range*s.noise_multiplier)),
                 wrap(bearing+self.rng.normal(0,c.camera_noise_bearing*s.noise_multiplier)))
+        gyro_z=self.gyro_z+c.gyro_bias_rad_s+self.rng.normal(0,c.gyro_noise_rad_s*s.noise_multiplier)
         return SensorPacket(self.left+self.rng.normal(0,c.encoder_noise_rad),
-            self.right+self.rng.normal(0,c.encoder_noise_rad),scan,det)
+            self.right+self.rng.normal(0,c.encoder_noise_rad),scan,det,float(gyro_z))
 
     def step(self,v:float,w:float):
         c=self.cfg;s=self.scenario;dt=c.dt
@@ -54,6 +56,7 @@ class KinematicTestBackend:
         slip=s.wheel_slip
         v_actual=v*(1-slip)
         w_actual=w*(1-.3*slip)
+        self.gyro_z=w_actual
         middle=self.truth[2]+w_actual*dt*.5
         proposed=self.truth.copy()
         proposed[0]+=v_actual*dt*math.cos(middle)

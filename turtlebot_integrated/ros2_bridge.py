@@ -23,7 +23,7 @@ def start_bridge(c:Config,enable_motion:bool,left_name:str,right_name:str):
         import rclpy
         from rclpy.node import Node
         from rclpy.qos import qos_profile_sensor_data
-        from sensor_msgs.msg import JointState,LaserScan,Image,CameraInfo
+        from sensor_msgs.msg import JointState,LaserScan,Image,CameraInfo,Imu
         from geometry_msgs.msg import Twist
         from cv_bridge import CvBridge
     except ImportError as ex:
@@ -44,6 +44,7 @@ def start_bridge(c:Config,enable_motion:bool,left_name:str,right_name:str):
             self.publish=self.create_publisher(Twist,'/cmd_vel',10)
             self.create_subscription(JointState,'/joint_states',self.on_encoder,qos_profile_sensor_data)
             self.create_subscription(LaserScan,'/scan',self.on_scan,qos_profile_sensor_data)
+            self.create_subscription(Imu,'/imu',self.on_imu,qos_profile_sensor_data)
             self.create_subscription(Image,'/camera/image_raw',self.on_image,qos_profile_sensor_data)
             self.create_subscription(CameraInfo,'/camera/camera_info',self.on_info,qos_profile_sensor_data)
             self.t0=time.monotonic()
@@ -60,6 +61,11 @@ def start_bridge(c:Config,enable_motion:bool,left_name:str,right_name:str):
 
         def on_scan(self,msg):
             self.sensors.scan_update(msg.ranges,msg.angle_min,msg.angle_increment,msg.range_max,time.monotonic())
+
+        def on_imu(self,msg):
+            # Assumes IMU +Z corresponds to base_link yaw. Verify frame and sign
+            # in the lab before enabling physical motion.
+            self.sensors.imu_update(msg.angular_velocity.z,time.monotonic())
 
         def on_info(self,msg):
             if len(msg.k)==9:
@@ -85,7 +91,9 @@ def start_bridge(c:Config,enable_motion:bool,left_name:str,right_name:str):
             if packet is None or not(status.encoder_ready and status.scan_ready):
                 self.zero();return
             if self.prev is not None:
-                self.ekf.predict(packet.encoder_left-self.prev[0],packet.encoder_right-self.prev[1])
+                gyro_delta=(packet.gyro_z_rad_s*c.dt if packet.gyro_z_rad_s is not None else None)
+                self.ekf.predict(packet.encoder_left-self.prev[0],packet.encoder_right-self.prev[1],
+                                 gyro_delta_yaw=gyro_delta)
             self.prev=(packet.encoder_left,packet.encoder_right)
             self.ekf.update_camera(packet.camera,c.marker_xy)
             (v,w),target=self.navigator.tick(now-self.t0,self.ekf.x.copy(),packet)

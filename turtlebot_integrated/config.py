@@ -10,6 +10,12 @@ class Config:
     # Separate from wheel_radius/wheel_separation because those set motor commands.
     odom_wheel_radius: float | None = None
     odom_wheel_separation: float | None = None
+    # Optional, physically measured angular-rate aid. OFF by default, so old
+    # experiments remain comparable. This never reads simulator ground-truth pose.
+    use_gyro_yaw: bool = False
+    gyro_yaw_weight: float = 0.98
+    gyro_noise_rad_s: float = 0.015
+    gyro_bias_rad_s: float = 0.003
     robot_radius: float = 0.125
     dt: float = 0.08
     max_speed: float = 0.22
