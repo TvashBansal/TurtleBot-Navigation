@@ -5,6 +5,40 @@
 > **Status: research/development baseline, not a verified MuJoCo or physical-robot demonstration.**
 > The *kinematic test double* and Python unit tests have been executed; **MuJoCo physics, rendered ArUco perception and ROS 2 hardware remain unverified until run in a supported environment**. Do not submit test-double results as MuJoCo evidence.
 
+## GitHub Codespaces and reproducible evidence
+
+Keep this repository private during development. The `.devcontainer/` setup is intended to support **Python and headless MuJoCo rendering in a GitHub Codespace** (OSMesa software rendering); the actual MuJoCo camera, model, and MP4 must still be tested. Work from the repository root. `outputs/` is a disposable scratch directory and is **ignored by Git**, whereas `results/` contains verified, selected run snapshots and is **committed to Git**.
+
+**Verify existing archived evidence:**
+
+```bash
+python scripts/verify_archive.py results
+python scripts/reproduce_archive.py results/tests/initial_python_tests
+python scripts/reproduce_archive.py results/kinematic/nominal_seed7_software_baseline
+```
+
+**Run new tests and permanently archive them:**
+
+```bash
+python scripts/record_tests.py --out outputs/tests_2026_10_18
+python scripts/archive_run.py outputs/tests_2026_10_18 --name tests_2026_10_18
+```
+
+**Run and permanently archive a new MuJoCo trial, including rendered video:**
+
+```bash
+python -m turtlebot_integrated.cli run --backend mujoco --scenario nominal --seed 7 --video --out outputs/nominal_seed7
+python scripts/archive_run.py outputs/nominal_seed7 --name nominal_seed7
+python scripts/verify_archive.py results
+git add results/
+git commit -m "Archive MuJoCo nominal trial and video"
+git push
+```
+
+Every archive contains a SHA-256 manifest, the input configuration, trial metadata, seed, source Git revision when available, metrics, logs, plots and recorded MP4 when capture succeeded. Reproduce archived MuJoCo runs with `python scripts/reproduce_archive.py results/mujoco/nominal_seed7`, which generates a side-by-side numeric comparison in `outputs/`.
+
+**Existing archived samples are software evidence only:** `results/kinematic/nominal_seed7_software_baseline/` is a low-fidelity test double; `results/tests/initial_python_tests/` contains the Python test-suite report. Neither constitutes a validated MuJoCo demonstration. Read the full workflow, Codespaces warnings and GitHub file-size guidance in [`docs/GITHUB_GUIDE.md`](docs/GITHUB_GUIDE.md) and [`results/README.md`](results/README.md).
+
 ## Brief compliance
 
 The integrated project requires TurtleBot3 with **2D LiDAR and camera in MuJoCo**, visual docking to an ArUco charging-station marker, a state-space model, wheel encoder/camera **EKF**, and estimated-state **LQR/state feedback**. All five assessment parts are assessed in simulation. Real hardware is optional and can strengthen HD evidence only after solid simulation results. Submission requires source code, GitHub project page, a five-minute demo, contribution and AI-use declarations, and individual viva.
@@ -63,7 +97,7 @@ python -m turtlebot_integrated.cli run --backend kinematic --scenario nominal --
 python -m turtlebot_integrated.cli suite --backend kinematic --seeds 3 --out outputs/kinematic_suite
 ```
 
-The offline test double approximates body kinematics, ray casting, line-of-sight marker measurements, noise and slip; it does **not** simulate wheel contact physics or a rendered camera. Every test-double `summary.json` is explicitly labelled. Use this only for software validation. The scenario-specific output folder contains `summary.json`, `trajectory.json`, and plots of track, EKF errors/uncertainty, and control commands. `--video` records a raw MuJoCo diagnostic MP4 with overhead view, rendered RGB camera, current EKF estimate and uncertainty, and simulator truth labelled **evaluation only**, if rendering/codec work. Edit the recorded clips into the required five-minute submission.
+The offline test double approximates body kinematics, ray casting, line-of-sight marker measurements, noise and slip; it does **not** simulate wheel contact physics or a rendered camera. Every test-double `summary.json` is explicitly labelled. Use this only for software validation. The scenario-specific output folder contains `summary.json`, `trajectory.json`, `config_snapshot.json`, `run_metadata.json`, and plots of track, EKF errors/uncertainty, and control commands. `--video` records a raw MuJoCo diagnostic MP4 with overhead view, rendered RGB camera, current EKF estimate and uncertainty, and simulator truth labelled **evaluation only**, if rendering/codec work. Edit the recorded clips into the required five-minute submission.
 
 ## Results (baseline test-double only)
 
@@ -85,6 +119,9 @@ At development time the nominal test double using seed 7 reached the virtual doc
 | `turtlebot_integrated/hardware.py` | ROS-neutral sensor packet decoder & motion interlock |
 | `turtlebot_integrated/reporting.py` | Reproducible trajectory, uncertainty and command charts |
 | `docs/` | Derivations, hardware runbook, viva, compliance and validation status |
+| `results/` | Committed run snapshots, test reports, reproducible metrics and short MP4s |
+| `scripts/` | Archive/verify/reproduce experiment and test evidence |
+| `.devcontainer/` | GitHub Codespaces Python + headless MuJoCo dependencies |
 | `tests/` | Unit, model rank, simulated closed-loop and safety tests |
 
 ## Safety and hardware

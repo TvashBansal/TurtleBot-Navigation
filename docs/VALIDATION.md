@@ -38,3 +38,13 @@ This is **one seed per scenario**, not a statistically meaningful performance st
 - Run 5+ seeds/scenario; quantify RMSE, successful dock fraction, collision fraction, tracking errors, NIS/2σ and control effort.
 - Capture real MuJoCo video using the overhead/camera/diagnostics capture showing robot, estimated state, covariance alongside truth **for evaluation**, and disturbance; prepare 5-min demonstration.
 - Validate robot ROS 2 topics, calibration and real sensors; record hardware trial only if available/safe.
+
+## 15 October 2026 — GitHub evidence workflow addendum
+
+- The archive/verification/replay scripts and the test-report recorder were exercised locally.
+- **20 automated tests passed** (including new archive integrity and overwrite protection tests).
+- A kinematic nominal seed-7 run was saved under `results/kinematic/nominal_seed7_software_baseline/`. Its file hashes verify, and a replay generated the same rounded metrics on the packaging environment.
+- Pytest XML/stdout/stderr and test counts were archived under `results/tests/initial_python_tests/`. Replay showed the same 20 passed test count.
+- These runs were executed outside the eventual GitHub repository, so `git_commit_at_run` in their provenance is null. New Codespaces runs should contain the SHA if performed inside a Git checkout.
+- Neither of these archived samples verifies MuJoCo physics, image-based ArUco detection or ROS 2 hardware; those validations remain outstanding.
+- The **manual MuJoCo GitHub Actions workflow is unverified**. Its existence is not evidence that the simulator runs successfully in Codespaces or Actions.

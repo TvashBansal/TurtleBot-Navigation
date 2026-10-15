@@ -2,6 +2,11 @@
 The controller and navigator never receive the truth state.
 """
 from dataclasses import asdict
+from datetime import datetime, timezone
+import importlib.metadata
+import platform
+import subprocess
+import sys
 from pathlib import Path
 import json
 import math
@@ -15,6 +20,21 @@ from .types import StepLog
 from .geometry import wrap
 
 
+def _git_head() -> str | None:
+    result = subprocess.run(['git', 'rev-parse', 'HEAD'], capture_output=True, text=True, check=False)
+    return result.stdout.strip() if result.returncode == 0 else None
+
+
+def _versions() -> dict:
+    versions = {}
+    for package in ('numpy', 'scipy', 'matplotlib', 'mujoco', 'opencv-contrib-python', 'imageio'):
+        try:
+            versions[package] = importlib.metadata.version(package)
+        except importlib.metadata.PackageNotFoundError:
+            versions[package] = None
+    return versions
+
+
 def run_trial(cfg:Config,backend:str,scenario_name:str,seed:int,outdir:Path, capture_frames:bool=False):
     scenario=get_scenario(scenario_name,seed)
     if backend=='mujoco':
@@ -24,6 +44,17 @@ def run_trial(cfg:Config,backend:str,scenario_name:str,seed:int,outdir:Path, cap
         sim=KinematicTestBackend(cfg,scenario,seed)
     else:raise ValueError('Backend must be mujoco or kinematic')
     outdir.mkdir(parents=True,exist_ok=True)
+    (outdir/'config_snapshot.json').write_text(json.dumps(asdict(cfg),indent=2)+'\n',encoding='utf-8')
+    run_metadata = dict(
+        backend=backend, scenario=scenario_name, seed=seed,
+        created_utc=datetime.now(timezone.utc).isoformat(),
+        git_commit_at_run=_git_head(),
+        python=sys.version.split()[0], platform=platform.platform(),
+        dependencies=_versions(), video_requested=bool(capture_frames),
+        sensor_note=('Kinematic test double: synthetic marker and ray measurements'
+                     if backend=='kinematic' else 'MuJoCo: rendered RGB image and simulated sensors'),
+    )
+    (outdir/'run_metadata.json').write_text(json.dumps(run_metadata,indent=2)+'\n',encoding='utf-8')
     ekf=PoseEKF(cfg,np.array(cfg.start_pose))
     nav=Navigator(cfg)
     prev=None

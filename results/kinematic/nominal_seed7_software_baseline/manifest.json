@@ -1,0 +1,52 @@
+{
+  "schema_version": 1,
+  "kind": "run",
+  "backend": "kinematic",
+  "identity": {
+    "scenario": "nominal",
+    "seed": 7
+  },
+  "archived_utc": "2026-10-15T06:11:38.336728+00:00",
+  "git_commit_at_run": null,
+  "git_commit_at_archive": null,
+  "assessment_evidence": false,
+  "limitations": "KINEMATIC SOFTWARE TEST DOUBLE; NOT MUJOCO ASSESSMENT EVIDENCE",
+  "reproduction_command": "python -m turtlebot_integrated.cli run --backend kinematic --scenario nominal --seed 7 --config results/kinematic/nominal_seed7_software_baseline/config_snapshot.json --out outputs/reproduced_nominal_seed7_software_baseline",
+  "file_inventory": [
+    {
+      "path": "config_snapshot.json",
+      "bytes": 968,
+      "sha256": "7bfc92457e3120db90ff82aa595f984ce991e47a03c875334ca8874a09c18760"
+    },
+    {
+      "path": "controls.png",
+      "bytes": 67103,
+      "sha256": "43721d742da79432de403b730cb1680e17eb2211bc8ecb871c54ac27113f071b"
+    },
+    {
+      "path": "estimation.png",
+      "bytes": 147705,
+      "sha256": "d6ff447aaabe55a0523dfcc31b99dc391afda9a743bb4e1d4ef9b1d01b6cefa6"
+    },
+    {
+      "path": "run_metadata.json",
+      "bytes": 510,
+      "sha256": "99040ce6e56f35c7f626cbb173ca9d9a298c30dd6f54bf2cf27778b486ac8627"
+    },
+    {
+      "path": "summary.json",
+      "bytes": 441,
+      "sha256": "2899386f57235fce0b7effa685e3b5e804e8ecc9c77dcf2fc0dec9a7771cc73f"
+    },
+    {
+      "path": "trajectory.json",
+      "bytes": 84125,
+      "sha256": "2da5cd6408ec90800afa1c62023c9c29dc4ef4036f504ff2161b3a8437febb22"
+    },
+    {
+      "path": "trajectory.png",
+      "bytes": 56878,
+      "sha256": "e363b34a1f8f621dcddad0d96065ef4c515fa02037c7e335eaddc257ddf49804"
+    }
+  ]
+}

@@ -1,0 +1,37 @@
+{
+  "schema_version": 1,
+  "kind": "tests",
+  "backend": "tests",
+  "identity": {
+    "tests": 20,
+    "exit_code": 0
+  },
+  "archived_utc": "2026-10-15T06:12:52.686089+00:00",
+  "git_commit_at_run": null,
+  "git_commit_at_archive": null,
+  "assessment_evidence": false,
+  "limitations": "Unit/integration tests, not MuJoCo assessment performance evidence",
+  "reproduction_command": "python scripts/record_tests.py --out outputs/reproduced_initial_python_tests",
+  "file_inventory": [
+    {
+      "path": "junit.xml",
+      "bytes": 2210,
+      "sha256": "f0a68e938e8c97223383aae6bf3c7c2ccfdb4556a7918c7ad81a604ed9e8fa10"
+    },
+    {
+      "path": "pytest_stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "pytest_stdout.txt",
+      "bytes": 99,
+      "sha256": "9e220018f20cc91fd4c4b42df7b98c6120dc3dc2551dec5507fcbf75b4bf190a"
+    },
+    {
+      "path": "test_metadata.json",
+      "bytes": 476,
+      "sha256": "0e68f6427471391154a2217754d185ed3cdeccf2d51e5c09402b02b403b4aa1a"
+    }
+  ]
+}
