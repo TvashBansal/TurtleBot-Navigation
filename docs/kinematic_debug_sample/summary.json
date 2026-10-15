@@ -1,0 +1,18 @@
+{
+  "backend": "kinematic",
+  "scenario": "nominal",
+  "seed": 7,
+  "success": true,
+  "planner_reported_done": true,
+  "collision": false,
+  "duration_s": 15.04,
+  "position_error_m": 0.1164,
+  "heading_error_rad": 0.1511,
+  "rmse_x_m": 0.0171,
+  "rmse_y_m": 0.0124,
+  "rmse_heading_rad": 0.0372,
+  "camera_detection_rate": 0.691,
+  "measurements": 130,
+  "steps": 188,
+  "warning": "KINEMATIC TEST DOUBLE ONLY; NOT ASSESSMENT SIMULATION"
+}

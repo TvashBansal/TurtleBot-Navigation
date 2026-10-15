@@ -1,0 +1,44 @@
+"""Types; 'truth' is exclusively used by simulators, experiment metrics and rendering."""
+from dataclasses import dataclass, field
+import numpy as np
+
+@dataclass
+class Pose2:
+    x: float
+    y: float
+    theta: float
+
+    def array(self) -> np.ndarray:
+        return np.array([self.x, self.y, self.theta], dtype=float)
+
+@dataclass
+class Scan:
+    ranges: np.ndarray
+    angles: np.ndarray
+    max_range: float
+
+@dataclass
+class CameraDetection:
+    distance: float
+    bearing: float
+    corners: np.ndarray | None = None
+
+@dataclass
+class SensorPacket:
+    encoder_left: float
+    encoder_right: float
+    scan: Scan
+    camera: CameraDetection | None
+
+@dataclass
+class StepLog:
+    t: float
+    truth: list[float]
+    estimate: list[float]
+    uncertainty: list[float]
+    cmd: list[float]
+    target: list[float]
+    camera_seen: bool
+    distance_to_goal: float
+    collision: bool
+    innovation_nis: float | None = None

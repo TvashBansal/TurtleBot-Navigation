@@ -1,0 +1,92 @@
+"""Run closed-loop experiments; truth is only used for logging/scoring.
+The controller and navigator never receive the truth state.
+"""
+from dataclasses import asdict
+from pathlib import Path
+import json
+import math
+import numpy as np
+from .config import Config
+from .ekf import PoseEKF
+from .navigation import Navigator
+from .kinematic import KinematicTestBackend
+from .scenarios import get_scenario
+from .types import StepLog
+from .geometry import wrap
+
+
+def run_trial(cfg:Config,backend:str,scenario_name:str,seed:int,outdir:Path, capture_frames:bool=False):
+    scenario=get_scenario(scenario_name,seed)
+    if backend=='mujoco':
+        from .mujoco_backend import MuJoCoBackend
+        sim=MuJoCoBackend(cfg,scenario,seed)
+    elif backend=='kinematic':
+        sim=KinematicTestBackend(cfg,scenario,seed)
+    else:raise ValueError('Backend must be mujoco or kinematic')
+    outdir.mkdir(parents=True,exist_ok=True)
+    ekf=PoseEKF(cfg,np.array(cfg.start_pose))
+    nav=Navigator(cfg)
+    prev=None
+    logs=[]
+    writer=None
+    if capture_frames and backend=='mujoco':
+        try:
+            import imageio.v2 as imageio
+            writer=imageio.get_writer(str(outdir/'demo_capture.mp4'),fps=2,codec='libx264')
+        except Exception as ex:
+            (outdir/'video_error.txt').write_text('MP4 initialization failed: '+repr(ex),encoding='utf-8')
+    steps=int(cfg.max_duration/cfg.dt)
+    try:
+        for k in range(steps):
+            packet=sim.observe()
+            if prev is not None:
+                ekf.predict(packet.encoder_left-prev[0],packet.encoder_right-prev[1])
+            prev=(packet.encoder_left,packet.encoder_right)
+            accepted=ekf.update_camera(packet.camera,cfg.marker_xy,scenario.noise_multiplier)
+            (v,w),target=nav.tick(sim.time,ekf.x.copy(),packet)
+            # Physics backend and test double receive the same wheel velocity commands.
+            sim.step(v,w)
+            truth=sim.get_truth() # metrics ONLY: not used by EKF/controller/navigator
+            goal=np.array(cfg.dock_pose)
+            logs.append(StepLog(
+                t=sim.time,truth=truth.tolist(),estimate=ekf.x.tolist(),
+                uncertainty=np.sqrt(np.maximum(np.diag(ekf.P),0)).tolist(),cmd=[v,w],
+                target=list(target),camera_seen=packet.camera is not None,
+                distance_to_goal=float(np.linalg.norm(truth[:2]-goal[:2])),
+                collision=sim.collision,innovation_nis=ekf.last_nis))
+            if writer is not None and k%6==0:
+                try:
+                    from .video import diagnostic_frame
+                    camera=sim.render_rgb(camera='front_camera')
+                    overhead=sim.render_rgb(camera='overhead')
+                    writer.append_data(diagnostic_frame(overhead,camera,logs[-1]))
+                except Exception as ex:
+                    (outdir/'video_error.txt').write_text('Video render failed: '+repr(ex),encoding='utf-8')
+                    writer.close();writer=None
+            if nav.done:break
+        endtruth=sim.get_truth()
+        endest=ekf.x
+        errors=np.array([[log.truth[0]-log.estimate[0],log.truth[1]-log.estimate[1],
+                          wrap(log.truth[2]-log.estimate[2])] for log in logs])
+        rmse=np.sqrt(np.mean(errors**2,axis=0))
+        goal=np.array(cfg.dock_pose)
+        position_error=float(np.linalg.norm(endtruth[:2]-goal[:2]))
+        heading_error=abs(wrap(endtruth[2]-goal[2]))
+        success=bool(nav.done and position_error<cfg.dock_tolerance+.06 and heading_error<.25 and not sim.collision)
+        summary=dict(backend=backend,scenario=scenario_name,seed=seed,success=success,
+            planner_reported_done=bool(nav.done),collision=bool(sim.collision),
+            duration_s=round(sim.time,3),position_error_m=round(position_error,4),
+            heading_error_rad=round(heading_error,4),
+            rmse_x_m=round(float(rmse[0]),4),rmse_y_m=round(float(rmse[1]),4),
+            rmse_heading_rad=round(float(rmse[2]),4),
+            camera_detection_rate=round(float(np.mean([a.camera_seen for a in logs])),3),
+            measurements=int(sum(x.camera_seen for x in logs)),
+            steps=len(logs),warning=('KINEMATIC TEST DOUBLE ONLY; NOT ASSESSMENT SIMULATION' if backend=='kinematic' else 'MuJoCo physics and rendered-camera trial'))
+        (outdir/'summary.json').write_text(json.dumps(summary,indent=2),encoding='utf-8')
+        (outdir/'trajectory.json').write_text(json.dumps([asdict(a) for a in logs]),encoding='utf-8')
+        from .reporting import plot_trial
+        plot_trial(logs,summary,outdir)
+        return summary
+    finally:
+        if writer is not None:writer.close()
+        if hasattr(sim,'close'):sim.close()

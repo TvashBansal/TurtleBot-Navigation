@@ -1,0 +1,9 @@
+# The simulated wheel geometry is inspired by TurtleBot3 Burger, but MUST be verified
+# against the specific physical robot before hardware use.
+wheel_radius: 0.033
+wheel_separation: 0.160
+robot_radius: 0.125
+max_speed: 0.22
+max_omega: 1.6
+seed: 7
+max_duration: 100.0

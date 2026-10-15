@@ -1,0 +1,23 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "turtlebot3-integrated-project"
+version = "0.1.0"
+description = "Track A: estimated-state TurtleBot3 waypoint navigation and visual docking in MuJoCo"
+requires-python = ">=3.10"
+dependencies = ["numpy>=1.24,<3", "scipy>=1.11,<2", "PyYAML>=6,<7", "matplotlib>=3.7,<4", "opencv-contrib-python>=4.8,<5", "mujoco>=3.2,<4", "imageio>=2.31,<3", "imageio-ffmpeg>=0.4,<1"]
+
+[project.optional-dependencies]
+test = ["pytest>=8,<10"]
+ros2 = [] # ROS 2 packages are installed from your ROS distribution, not PyPI.
+
+[project.scripts]
+turtlebot-integrated = "turtlebot_integrated.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["turtlebot_integrated*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
