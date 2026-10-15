@@ -30,7 +30,10 @@ def scene_xml(c: Config,s:Scenario, marker_path:Path) -> str:
     for i,angle in enumerate(np.linspace(-math.pi,math.pi,c.lidar_beams,endpoint=False)):
         co,si=math.cos(angle),math.sin(angle)
         quat=f'{math.sqrt(.5):.7f} {-si*math.sqrt(.5):.7f} {co*math.sqrt(.5):.7f} 0'
-        lidar_sites+=f'<site name="ray_{i:03d}" pos="{c.robot_radius*co:.6f} {c.robot_radius*si:.6f} 0.022" quat="{quat}" size="0.002" rgba="0 0.9 0 0"/>\n'
+        # Ray origin is the physical LiDAR head ABOVE the chassis/bumper.
+        # Perimeter sites at chassis height can intersect the robot itself,
+        # producing false near-zero ranges and an endless safety-brake turn.
+        lidar_sites+=f'<site name="ray_{i:03d}" pos="0 0 0.105" quat="{quat}" size="0.002" rgba="0 0.9 0 0"/>\n'
         lidar_sensors+=f'<rangefinder name="range_{i:03d}" site="ray_{i:03d}"/>\n'
     xml=f'''<mujoco model="turtlebot3_visual_docking">
     <compiler angle="radian"/>
@@ -119,8 +122,9 @@ class MuJoCoBackend:
     def observe(self):
         c=self.c
         d=np.array([self._sensor(i) for i in self.ray_sids],float)
-        # Sensor rays start at perimeter of chassis. Convert to approximately base_link range.
-        d=np.where(d<0,c.lidar_max_range, d+c.robot_radius)
+        # Rays now originate at the body-centred LiDAR head, so their measured
+        # distances are already base-centred: do NOT add the robot radius.
+        d=np.where(d<0,c.lidar_max_range,d)
         d=np.clip(d+self.rng.normal(0,c.lidar_noise*self.s.noise_multiplier,len(d)),.03,c.lidar_max_range)
         camera=None
         if self.renderer is not None and self.tick%5==0 and self.rng.random()>(c.camera_dropout+self.s.camera_dropout_extra):
