@@ -8,7 +8,7 @@ printf 'OS: '
 . /etc/os-release
 printf '%s\n' "$PRETTY_NAME"
 
-if [[ "$ID" != "debian" && "$ID_LIKE" != *debian* ]]; then
+if [[ "$ID" != "debian" && "${ID_LIKE:-}" != *debian* ]]; then
   echo 'ERROR: Wrong container OS. Rebuild the Codespace using .devcontainer/devcontainer.json (Debian required).' >&2
   exit 1
 fi
