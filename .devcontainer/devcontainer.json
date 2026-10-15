@@ -1,0 +1,17 @@
+{
+  "name": "TurtleBot-Navigation - MuJoCo and test environment",
+  "build": { "dockerfile": "Dockerfile" },
+  "postCreateCommand": "python -m pip install --upgrade pip && python -m pip install -e '.[test]'",
+  "remoteEnv": {
+    "MUJOCO_GL": "osmesa",
+    "MPLBACKEND": "Agg"
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-python.python",
+        "ms-python.vscode-pylance"
+      ]
+    }
+  }
+}

@@ -1,0 +1,50 @@
+name: Python checks and reproducible test evidence
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  unit-and-smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libosmesa6 libosmesa6-dev libgl1 libglfw3 libglew2.2 ffmpeg
+          python -m pip install --upgrade pip
+          python -m pip install -e '.[test]'
+
+      - name: Automated tests
+        env:
+          MPLBACKEND: Agg
+          MUJOCO_GL: osmesa
+        run: |
+          python scripts/record_tests.py --out outputs/ci/pytest
+
+      - name: Kinematic smoke test
+        env:
+          MPLBACKEND: Agg
+        run: |
+          python -m turtlebot_integrated.cli run --backend kinematic --scenario nominal --seed 7 --out outputs/ci/kinematic_smoke
+
+      - name: Verify archived results
+        run: python scripts/verify_archive.py results
+
+      - name: Upload test artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: python-tests-and-kinematic-smoke
+          path: outputs/ci/
+          retention-days: 14
+          if-no-files-found: warn

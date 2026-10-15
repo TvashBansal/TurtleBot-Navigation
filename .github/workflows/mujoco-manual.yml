@@ -1,0 +1,65 @@
+name: Experimental headless MuJoCo validation (manual)
+
+on:
+  workflow_dispatch:
+    inputs:
+      scenario:
+        description: 'Scenario to test'
+        required: true
+        type: choice
+        options:
+          - nominal
+          - noise
+          - blocked
+          - disturbance
+          - camera_loss
+      capture_video:
+        description: 'Attempt headless MP4 recording'
+        required: true
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+jobs:
+  mujoco:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install MuJoCo dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libosmesa6 libosmesa6-dev libgl1 libgl1-mesa-dri libglfw3 libglew2.2 ffmpeg
+          python -m pip install --upgrade pip
+          python -m pip install -e '.[test]'
+
+      - name: Execute MuJoCo experiment
+        shell: bash
+        env:
+          MPLBACKEND: Agg
+          MUJOCO_GL: osmesa
+        run: |
+          extra=()
+          if [[ "${{ inputs.capture_video }}" == "true" ]]; then
+            extra+=(--video)
+          fi
+          python -m turtlebot_integrated.cli run \
+            --backend mujoco \
+            --scenario "${{ inputs.scenario }}" \
+            --seed 7 \
+            --out outputs/manual_mujoco \
+            "${extra[@]}"
+
+      - name: Upload simulation artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: manual-mujoco-${{ inputs.scenario }}
+          path: outputs/manual_mujoco/
+          retention-days: 14
+          if-no-files-found: warn
