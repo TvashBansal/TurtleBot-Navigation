@@ -15,8 +15,14 @@ class PoseEKF:
     def predict(self, dl:float, dr:float):
         """Wheel increments (radians), from measured encoders, NOT simulator pose."""
         c=self.cfg
-        ds=c.wheel_radius*(dl+dr)*0.5
-        dtheta=c.wheel_radius*(dr-dl)/c.wheel_separation
+        # Calibrate encoder-to-body displacement without changing the physical
+        # MuJoCo wheel actuators. Truth is NEVER used in this online estimate.
+        radius = c.wheel_radius if c.odom_wheel_radius is None else c.odom_wheel_radius
+        separation = c.wheel_separation if c.odom_wheel_separation is None else c.odom_wheel_separation
+        if radius <= 0 or separation <= 0:
+            raise ValueError('Odometry wheel radius and separation must be positive')
+        ds=radius*(dl+dr)*0.5
+        dtheta=radius*(dr-dl)/separation
         mid=self.x[2]+0.5*dtheta
         self.x[0] += ds*math.cos(mid)
         self.x[1] += ds*math.sin(mid)
@@ -25,9 +31,9 @@ class PoseEKF:
         F[0,2]=-ds*math.sin(mid)
         F[1,2]=ds*math.cos(mid)
         # Encoder uncertainty is mapped into SE(2) process covariance.
-        G=np.array([[c.wheel_radius*0.5*math.cos(mid),c.wheel_radius*0.5*math.cos(mid)],
-                    [c.wheel_radius*0.5*math.sin(mid),c.wheel_radius*0.5*math.sin(mid)],
-                    [-c.wheel_radius/c.wheel_separation,c.wheel_radius/c.wheel_separation]])
+        G=np.array([[radius*0.5*math.cos(mid),radius*0.5*math.cos(mid)],
+                    [radius*0.5*math.sin(mid),radius*0.5*math.sin(mid)],
+                    [-radius/separation,radius/separation]])
         var=(c.encoder_noise_rad**2)+.0001*(abs(dl)+abs(dr))
         Q=G @ (np.eye(2)*var) @ G.T + np.diag([1e-6,1e-6,2e-6])
         self.P=F@self.P@F.T+Q

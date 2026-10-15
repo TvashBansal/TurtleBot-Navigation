@@ -1,0 +1,5 @@
+# Preliminary encoder calibration from 2-second MuJoCo physics probes.
+# Do not call this validated; it must be compared against nominal on full runs.
+# For motor actuation, unchanged physical wheel radius/separation are used.
+odom_wheel_radius: 0.0356
+odom_wheel_separation: 0.1980

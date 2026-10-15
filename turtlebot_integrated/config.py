@@ -6,6 +6,10 @@ import yaml
 class Config:
     wheel_radius: float = 0.033
     wheel_separation: float = 0.160
+    # Estimated-state odometry calibration only. None uses nominal wheel geometry.
+    # Separate from wheel_radius/wheel_separation because those set motor commands.
+    odom_wheel_radius: float | None = None
+    odom_wheel_separation: float | None = None
     robot_radius: float = 0.125
     dt: float = 0.08
     max_speed: float = 0.22
