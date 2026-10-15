@@ -1,32 +1,39 @@
-TURTLEBOT-NAVIGATION — MuJoCo LiDAR self-hit correction + diagnostics
+TurtleBot-Navigation - camera UV correction, v0.3
 
-Files to place in the existing GitHub repository:
-  turtlebot_integrated/mujoco_backend.py   [REPLACE existing file]
-  scripts/diagnose_mujoco.py               [NEW]
-  tests/test_mujoco_lidar.py               [NEW]
+WHY:
+The real MuJoCo camera probe detected the ArUco tag only after reflecting
+its RGB frame horizontally or vertically. Mirrored default MJCF box-face
+texture coordinates are the likely reason. The correction reflects only the
+image used as the MJCF marker texture, leaving the rendered camera frame
+and its optical bearing coordinates unchanged. It does NOT modify your
+original assets/aruco_0.png or any existing saved experiment.
 
-The previous LiDAR rays started on the robot's circumference at chassis
-height. Some could intersect the front bumper, causing false short ranges.
-The corrected rays originate at the simulated LiDAR head, above the chassis,
-so no robot-radius offset is added to ranges.
+FILES: upload the following, preserving folder paths:
+  turtlebot_integrated/mujoco_backend.py  (REPLACE)
+  scripts/diagnose_camera_uv.py           (NEW)
+  tests/test_mujoco_camera_uv.py          (NEW)
 
-NOTES:
-- The correction is based on geometry/code inspection and diagnostic logs.
-- The code has not been validated here against MuJoCo (unavailable here).
-- The camera/ArUco issue is not yet fixed. The diagnostic script probes image
-  flipping and prints wheel-encoder-to-truth discrepancies to find root causes.
-- Do not label any run successful until summary.json reports success=true,
-  actual camera detections are observed, and plots/video have been reviewed.
+IN CODESPACES:
+  cd /workspaces/TurtleBot-Navigation
+  git pull --ff-only origin main
+  source .venv/bin/activate
+  export MUJOCO_GL=osmesa MPLBACKEND=Agg
+  python -m pytest -q
+  python scripts/diagnose_camera_uv.py
 
-After copying files to their corresponding repository folders:
-    cd /workspaces/TurtleBot-Navigation
-    source .venv/bin/activate
-    export MUJOCO_GL=osmesa MPLBACKEND=Agg
-    python -m pytest -q
-    python scripts/diagnose_mujoco.py
+Inspect outputs/diagnostics/camera_uv/{center,marker_left,marker_right}.png
+and outputs/diagnostics/camera_uv/camera_uv_report.json. Send the diagnostic
+console output, especially camera distances, bearings and EKF acceptance.
+If center is detected and geometry seems physically plausible, rerun
+nominal MuJoCo without video first:
+  python -m turtlebot_integrated.cli run --backend mujoco --scenario nominal --seed 7 --out outputs/mujoco_nominal_camera_fix
 
-Then run a fresh nominal trial:
-    python -m turtlebot_integrated.cli run --backend mujoco --scenario nominal \
-      --seed 7 --out outputs/mujoco_nominal_lidarfix
-
-Only commit code/tests when they pass. Keep diagnostic outputs in outputs/.
+IMPORTANT:
+* This is a hypothesis-driven correction that could not be physics-tested
+  in the package creation environment (MuJoCo unavailable there).
+* The initial 2-second turning trial showed encoder-predicted yaw 1.0808
+  rad versus physics yaw 0.9429 rad (~14.6% discrepancy). One data point
+  does not justify modifying EKF wheel geometry. Evaluate repeat trials and
+  camera innovation before calibrating effective odometry.
+* Keep unsuccessful trials under outputs/ until reviewed. The controller
+  must NEVER read MuJoCo truth to control the robot.

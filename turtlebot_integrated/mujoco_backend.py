@@ -3,7 +3,9 @@
 NOTE: Requires MuJoCo with a working OpenGL renderer. No hidden kinematic fallback.
 """
 import math
+import tempfile
 from pathlib import Path
+import cv2
 import numpy as np
 from .config import Config
 from .camera import make_marker, marker_from_rgb
@@ -82,6 +84,21 @@ def scene_xml(c: Config,s:Scenario, marker_path:Path) -> str:
 </mujoco>'''
     return xml
 
+def make_mujoco_uv_marker(source: Path, destination: Path) -> Path:
+    """Compensate for the mirrored planar texture coordinates on marker_face.
+
+    Only the MJCF texture is mirrored. DO NOT mirror the camera frame itself:
+    doing so would reverse horizontal image coordinates and camera bearings.
+    Keep the original marker image unchanged for standalone OpenCV tests.
+    """
+    image = cv2.imread(str(source), cv2.IMREAD_UNCHANGED)
+    if image is None:
+        raise FileNotFoundError(f"Could not read original ArUco image: {source}")
+    if not cv2.imwrite(str(destination), cv2.flip(image, 1)):
+        raise OSError(f"Could not write MJCF marker texture: {destination}")
+    return destination
+
+
 class MuJoCoBackend:
     def __init__(self,c:Config,s:Scenario,seed:int=7,record_camera:bool=True):
         try:
@@ -91,7 +108,13 @@ class MuJoCoBackend:
         self.mj=mujoco;self.c=c;self.s=s;self.rng=np.random.default_rng(seed)
         marker_path=Path(__file__).resolve().parent.parent/'assets'/'aruco_0.png'
         if not marker_path.exists():make_marker(str(marker_path))
-        self.model=mujoco.MjModel.from_xml_string(scene_xml(c,s,marker_path))
+        # MuJoCo's default box-face UVs mirror the supplied marker texture.
+        # The camera probe detected the tag only after reflecting the image;
+        # compensate at the *texture* so the camera image coordinates remain
+        # physically correct for range/bearing observations and the EKF.
+        with tempfile.TemporaryDirectory(prefix='turtlebot_mj_marker_') as tmpdir:
+            mj_marker=make_mujoco_uv_marker(marker_path,Path(tmpdir)/'marker_uv.png')
+            self.model=mujoco.MjModel.from_xml_string(scene_xml(c,s,mj_marker))
         self.data=mujoco.MjData(self.model)
         self.renderer=mujoco.Renderer(self.model,height=c.camera_height,width=c.camera_width) if record_camera else None
         self.tick=0;self.time=0.0;self.collision=False
