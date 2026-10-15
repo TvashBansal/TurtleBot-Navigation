@@ -1,8 +1,5 @@
 import argparse
 import json
-from dataclasses import asdict
-from datetime import datetime, timezone
-from .experiment import _git_head, _versions
 from pathlib import Path
 from .config import Config
 from .experiment import run_trial
@@ -24,29 +21,17 @@ def main():
     suite.add_argument('--config',type=str)
     suite.add_argument('--out',type=Path,default=Path('outputs/suite'))
     suite.add_argument('--seeds',type=int,default=3)
-    suite.add_argument('--video',action='store_true',help='Record a MuJoCo MP4 for every trial (large outputs)')
     args=parser.parse_args()
     cfg=Config.load(args.config)
     if args.command=='run':
         result=run_trial(cfg,args.backend,args.scenario,args.seed,args.out,args.video)
         print(json.dumps(result,indent=2))
     elif args.command=='suite':
-        if args.seeds < 1:
-            parser.error('--seeds must be positive')
-        args.out.mkdir(parents=True,exist_ok=True)
-        (args.out/'config_snapshot.json').write_text(json.dumps(asdict(cfg),indent=2)+'\n',encoding='utf-8')
-        suite_metadata = {
-            'backend':args.backend,'seeds':args.seeds,'scenarios':SCENARIOS,
-            'created_utc':datetime.now(timezone.utc).isoformat(),
-            'git_commit_at_run':_git_head(),
-            'dependencies':_versions(),'video_requested':bool(args.video),
-        }
-        (args.out/'suite_metadata.json').write_text(json.dumps(suite_metadata,indent=2)+'\n',encoding='utf-8')
         results=[]
         for scenario in SCENARIOS:
             for seed in range(args.seeds):
                 out=args.out/scenario/f'seed_{seed}'
-                results.append(run_trial(cfg,args.backend,scenario,seed,out,args.video))
+                results.append(run_trial(cfg,args.backend,scenario,seed,out))
                 print(f'{scenario} / seed {seed}: {results[-1]["success"]} ({results[-1]["duration_s"]:.1f} s)')
         import numpy as np
         agg={'backend':args.backend,'count':len(results),
