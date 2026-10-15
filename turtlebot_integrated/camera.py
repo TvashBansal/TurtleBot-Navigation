@@ -10,20 +10,47 @@ def camera_intrinsics(c:Config):
     fy=c.camera_height/(2*math.tan(math.radians(c.camera_fovy_deg)/2))
     return np.array([[fy,0,c.camera_width/2],[0,fy,c.camera_height/2],[0,0,1]],float)
 
-# OpenCV camera is x right, y down, z forward. MuJoCo rendered frames are flipped vertically
-# if necessary by the calling backend. We use the ArUco marker's four known-size corners.
+# Optical coordinates: x right, y down, z forward. Keep native rendered
+# orientation so bearing signs are physical; v0.3 corrected the marker UVs.
+def _detect_marker_corners(gray: np.ndarray, marker_id: int, mode: str):
+    """Return corners in original pixel coordinates, or None.
+
+    Upscaling and contrast enhancement operate on the *same real camera frame*,
+    not on synthetic ground-truth bearings or marker poses. A detected ArUco ID
+    is still required; the PnP geometry is unchanged.
+    """
+    if mode not in ("standard", "multiscale"):
+        raise ValueError("camera_detection_mode must be standard or multiscale")
+    dictionary=cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_4X4_50)
+    params=cv2.aruco.DetectorParameters()
+    detector=cv2.aruco.ArucoDetector(dictionary,params)
+    attempts=[(gray,1.0)]
+    if mode=="multiscale":
+        # Upsampling can help tags that occupy too few source pixels; it cannot
+        # recover a marker hidden behind a wall or entirely outside the image.
+        clahe=cv2.createCLAHE(clipLimit=2.0,tileGridSize=(8,8)).apply(gray)
+        attempts.extend([
+            (clahe,1.0),
+            (cv2.resize(gray,None,fx=2,fy=2,interpolation=cv2.INTER_CUBIC),2.0),
+            (cv2.resize(clahe,None,fx=2,fy=2,interpolation=cv2.INTER_CUBIC),2.0),
+        ])
+    for view,scale in attempts:
+        corners,ids,_=detector.detectMarkers(view)
+        if ids is None:continue
+        selected=np.where(ids.flatten()==marker_id)[0]
+        if len(selected):
+            return np.asarray(corners[int(selected[0])][0],dtype=np.float32)/scale
+    return None
+
 def marker_from_rgb(rgb:np.ndarray,c:Config,marker_id:int=0,
                     camera_matrix_override:np.ndarray | None=None,distortion:np.ndarray | None=None):
     if not hasattr(cv2,'aruco'):
         raise RuntimeError('OpenCV ArUco not available; install opencv-contrib-python')
+    if rgb is None or rgb.ndim!=3 or rgb.shape[-1]!=3:
+        raise ValueError('Expected RGB image with dimensions H x W x 3')
     gray=cv2.cvtColor(rgb,cv2.COLOR_RGB2GRAY)
-    dictionary=cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_4X4_50)
-    detector=cv2.aruco.ArucoDetector(dictionary,cv2.aruco.DetectorParameters())
-    corners,ids,_=detector.detectMarkers(gray)
-    if ids is None:return None
-    selected=np.where(ids.flatten()==marker_id)[0]
-    if len(selected)==0:return None
-    image_corners=np.asarray(corners[int(selected[0])][0],dtype=np.float32)
+    image_corners=_detect_marker_corners(gray,marker_id,c.camera_detection_mode)
+    if image_corners is None:return None
     half=c.camera_marker_size*.5
     object_points=np.array([[-half,half,0],[half,half,0],[half,-half,0],[-half,-half,0]],np.float32)
     ok,rvec,tvec=cv2.solvePnP(object_points,image_corners,

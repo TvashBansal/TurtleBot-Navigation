@@ -27,6 +27,9 @@ class Config:
     camera_noise_range: float = 0.045
     camera_noise_bearing: float = 0.028
     camera_dropout: float = 0.025
+    # Vision algorithm only; "standard" retains all pre-v0.6 results unchanged.
+    # "multiscale" retries small/low-contrast rendered tags without synthetic detections.
+    camera_detection_mode: str = "standard"
     camera_max_range: float = 2.8
     camera_half_fov_deg: float = 43.0
     camera_width: int = 640
