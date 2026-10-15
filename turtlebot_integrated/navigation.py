@@ -36,13 +36,39 @@ class Navigator:
             self.last_plan_t=t
             planned=self.map.plan((float(pose[0]),float(pose[1])),(gx,gy))
             if planned:self.path=planned
-        # Look ahead along estimated path, not simulator ground truth.
-        target=(gx,gy)
+        # Select a visible lookahead ON the A* path. A far waypoint chosen
+        # merely by distance can cut diagonally across inflated obstacles.
+        # Visibility is checked against the LiDAR-built map (NOT truth).
+        # With no A* route, do not drive directly at the goal through an
+        # unverified corridor; wait for the next replan.
+        target=(float(pose[0]),float(pose[1]))
         if self.path:
+            mask=self.map.obstacles()
+            # The first 3x3 cells were deliberately cleared by A* when the
+            # estimated robot begins within its own inflated obstacle halo.
+            # Apply the same exception for visibility testing near that start.
+            start_cell=self.map.xy_to_cell(float(pose[0]),float(pose[1]))
+            for yy in range(max(0,start_cell[1]-1),min(mask.shape[0],start_cell[1]+2)):
+                for xx in range(max(0,start_cell[0]-1),min(mask.shape[1],start_cell[0]+2)):
+                    mask[yy,xx]=False
+            visible=[]
             for p in self.path:
-                if math.dist(p,pose[:2])>self.c.nav_lookahead_m:
-                    target=p
+                if math.dist(p,pose[:2]) < self.map.res*.35:
+                    continue
+                if not self.map.segment_clear(tuple(pose[:2]),p,mask):
+                    # A* path is ordered; never skip around a blocked segment
+                    # to reach a farther target.
                     break
+                visible.append(p)
+            if visible:
+                within=[p for p in visible if math.dist(p,pose[:2])<=self.c.nav_lookahead_m]
+                target=within[-1] if within else visible[0]
+            else:
+                # Fail safely if the map has no visible onward path.
+                # Force replanning on the next tick; do not drive through it.
+                self.path=[]
+                self.last_plan_t=-1e9
+                target=(float(pose[0]),float(pose[1]))
         if last and math.dist(pose[:2],(gx,gy))<.35:
             target=(gx,gy)
         heading=self.c.dock_pose[2] if last and math.dist(pose[:2],(gx,gy))<.3 else None

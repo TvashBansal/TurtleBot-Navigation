@@ -48,6 +48,23 @@ class OccupancyMap:
         cells[0,:]=True;cells[-1,:]=True;cells[:,0]=True;cells[:,-1]=True
         return cells
 
+    def segment_clear(self, start: tuple[float, float], end: tuple[float, float],
+                      occupied: np.ndarray | None = None) -> bool:
+        """Check direct line of sight against the *estimated*, inflated occupancy grid.
+
+        Used only to select a local target on an already computed A* path.
+        The geometry originates from LiDAR, never from simulator ground truth.
+        """
+        mask = self.obstacles() if occupied is None else occupied
+        dx, dy = end[0] - start[0], end[1] - start[1]
+        count = max(1, int(math.ceil(math.hypot(dx, dy) / (self.res * 0.25))))
+        for i in range(count + 1):
+            t = i / count
+            cell = self.xy_to_cell(start[0] + t*dx, start[1] + t*dy)
+            if not self.inbounds(cell) or mask[cell[1], cell[0]]:
+                return False
+        return True
+
     def plan(self,start:tuple[float,float],goal:tuple[float,float]):
         s=self.xy_to_cell(*start);g=self.xy_to_cell(*goal)
         if not (self.inbounds(s) and self.inbounds(g)):return []
