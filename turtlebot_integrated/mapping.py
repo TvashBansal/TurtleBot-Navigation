@@ -96,3 +96,79 @@ class OccupancyMap:
         path.reverse()
         # Pick every other cell; waypoint follower can smooth between these.
         return [self.cell_to_xy(c) for c in path]
+
+
+    def plan_to_goal_region(self, start: tuple[float, float],
+                            goal: tuple[float, float],
+                            radius_m: float) -> list[tuple[float, float]]:
+        """A* to a *free, reachable cell within* a waypoint capture region.
+
+        Only for intermediate waypoints, not the precise charging-station goal.
+        A cell is accepted only if its centre falls inside the region and is
+        outside the same inflated LiDAR occupancy mask used by normal A*.
+        In particular, a blocked nominal goal is never cleared or traversed.
+        """
+        if not math.isfinite(radius_m) or radius_m <= 0:
+            return []
+        s = self.xy_to_cell(*start)
+        if not self.inbounds(s) or not self.inbounds(self.xy_to_cell(*goal)):
+            return []
+        mask = self.obstacles()
+        # Preserve the same local start exception as plan(). We must not
+        # discard the robot's position solely because an obstacle halo grew
+        # around it; direct LiDAR braking still prevents unsafe motion.
+        for yy in range(max(0, s[1]-1), min(self.height, s[1]+2)):
+            for xx in range(max(0, s[0]-1), min(self.width, s[0]+2)):
+                mask[yy, xx] = False
+
+        # Require a cell-centre to be *strictly* within the configured
+        # capture distance, leaving a small margin for discretisation.
+        capture_radius = max(0., radius_m - 0.015)
+        acceptable = set()
+        g = self.xy_to_cell(*goal)
+        extent = math.ceil(radius_m / self.res) + 2
+        for yy in range(max(0, g[1]-extent), min(self.height, g[1]+extent+1)):
+            for xx in range(max(0, g[0]-extent), min(self.width, g[0]+extent+1)):
+                if not mask[yy, xx] and math.dist(self.cell_to_xy((xx,yy)), goal) <= capture_radius:
+                    acceptable.add((xx, yy))
+        if not acceptable:
+            return []
+
+        # A* with an exact Euclidean-distance lower bound to the set of
+        # accepted cells. No corner cutting or skipping across obstacles.
+        # Candidate sets are tiny for intermediate capture radii (~0.24m).
+        def heuristic(cell):
+            return min(math.hypot(cell[0]-item[0], cell[1]-item[1])
+                       for item in acceptable)
+        q = [(heuristic(s), 0., s)]
+        cost = {s: 0.}
+        parent = {}
+        endpoint = None
+        while q:
+            _, current_cost, cell = heapq.heappop(q)
+            if current_cost > cost.get(cell, math.inf) + 1e-9:
+                continue
+            if cell in acceptable:
+                endpoint = cell
+                break
+            for dx in (-1,0,1):
+                for dy in (-1,0,1):
+                    if not (dx or dy):
+                        continue
+                    nxt = (cell[0]+dx, cell[1]+dy)
+                    if not self.inbounds(nxt) or mask[nxt[1], nxt[0]]:
+                        continue
+                    if dx and dy and (mask[cell[1], nxt[0]] or mask[nxt[1], cell[0]]):
+                        continue
+                    new_cost = cost[cell] + math.hypot(dx,dy) + max(self.log_odds[nxt[1],nxt[0]],0)*.2
+                    if new_cost < cost.get(nxt, math.inf):
+                        cost[nxt] = new_cost
+                        parent[nxt] = cell
+                        heapq.heappush(q, (new_cost + heuristic(nxt),new_cost,nxt))
+        if endpoint is None:
+            return []
+        path = [endpoint]
+        while path[-1] != s:
+            path.append(parent[path[-1]])
+        path.reverse()
+        return [self.cell_to_xy(cell) for cell in path]

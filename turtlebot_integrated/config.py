@@ -25,6 +25,10 @@ class Config:
     # Optional small local grid-node capture radius (v0.9 experiment).
     # Default preserves old 0.08 m controller behavior.
     nav_local_capture_radius_m: float = 0.08
+    # v0.10 experimental A* endpoint flexibility for *intermediate* waypoints.
+    # Disabled by default to preserve v0.9 and earlier benchmark behavior.
+    nav_intermediate_goal_region_fallback: bool = False
+    nav_intermediate_goal_radius_m: float = 0.24
     lqr_steering_scale: float = 1.0
     lqr_forward_heading_cutoff_rad: float = 1.05
     lqr_turn_kp: float = 2.0

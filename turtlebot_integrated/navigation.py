@@ -23,11 +23,12 @@ class Navigator:
         self.last_path_nodes = 0
         self.last_visible_nodes = 0
         self.last_target_distance_m = 0.0
+        self.last_goal_region_fallback = False
 
     def tick(self,t:float,pose:np.ndarray,packet:SensorPacket):
         self.map.update(pose,packet.scan)
         waypoints=self.c.waypoints
-        while self.idx<len(waypoints)-1 and math.dist(pose[:2],waypoints[self.idx])<.24:
+        while self.idx<len(waypoints)-1 and math.dist(pose[:2],waypoints[self.idx])<self.c.nav_intermediate_goal_radius_m:
             self.idx+=1
             self.path=[]
         gx,gy=waypoints[self.idx]
@@ -39,8 +40,22 @@ class Navigator:
             return (0.0,0.0),(gx,gy)
         if t-self.last_plan_t>1.0 or not self.path:
             self.last_plan_t=t
-            planned=self.map.plan((float(pose[0]),float(pose[1])),(gx,gy))
-            if planned:self.path=planned
+            start_xy = (float(pose[0]), float(pose[1]))
+            planned=self.map.plan(start_xy,(gx,gy))
+            self.last_goal_region_fallback = False
+            if not planned and not last and self.c.nav_intermediate_goal_region_fallback:
+                # Only fall back if the *intermediate goal cell itself* is
+                # occupied by the inflated LiDAR mask. A genuine disconnected
+                # route must remain a safe stop, not a recovery shortcut.
+                goal_cell=self.map.xy_to_cell(gx,gy)
+                occupied=self.map.obstacles()
+                if self.map.inbounds(goal_cell) and occupied[goal_cell[1],goal_cell[0]]:
+                    planned=self.map.plan_to_goal_region(
+                        start_xy,(gx,gy),self.c.nav_intermediate_goal_radius_m)
+                    self.last_goal_region_fallback = bool(planned)
+            # Discard stale routes whenever replanning fails; don't continue
+            # traversing a path invalidated by newly observed obstacles.
+            self.path=planned
         # Select a visible lookahead ON the A* path. A far waypoint chosen
         # merely by distance can cut diagonally across inflated obstacles.
         # Visibility is checked against the LiDAR-built map (NOT truth).
@@ -78,7 +93,8 @@ class Navigator:
                 candidates=within if within else [visible[0]]
                 beyond=[p for p in candidates if math.dist(p,pose[:2])>=self.c.nav_local_capture_radius_m]
                 target=beyond[-1] if beyond else candidates[-1]
-                self.last_planner_status=('path_following' if beyond else 'near_path_node')
+                self.last_planner_status=(('goal_region_path' if self.last_goal_region_fallback else 'path_following')
+                                          if beyond else 'near_path_node')
             else:
                 # Fail safely if the map has no visible onward path.
                 # Force replanning on the next tick; do not drive through it.
