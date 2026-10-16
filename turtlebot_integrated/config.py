@@ -34,6 +34,10 @@ class Config:
     lqr_turn_kp: float = 2.0
     lqr_heading_speed_scheduling: bool = False
     lqr_speed_limit_m_s: float | None = None
+    # Experimental MuJoCo-only passive contact support. Disabled by default to
+    # preserve all existing v0.11 physics results. The additional sphere is a
+    # deliberately simplified stabiliser, NOT an exact TurtleBot3 CAD feature.
+    mujoco_front_support_enabled: bool = False
     lidar_beams: int = 72
     lidar_max_range: float = 3.2
     lidar_noise: float = 0.015

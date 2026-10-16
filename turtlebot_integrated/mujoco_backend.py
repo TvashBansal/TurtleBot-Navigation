@@ -27,6 +27,16 @@ def scene_xml(c: Config,s:Scenario, marker_path:Path) -> str:
         sx,sy=max(.01,(x2-x1)*.5),max(.01,(y2-y1)*.5)
         color='0.3 0.35 0.4 1' if i<4 else '0.7 0.45 0.27 1'
         walls+=f'<geom name="obstacle_{i}" type="box" pos="{cx:.4f} {cy:.4f} 0.12" size="{sx:.4f} {sy:.4f} 0.12" rgba="{color}"/>\n'
+    # Passive low-friction frontal ball is an EXPERIMENTAL stabiliser against
+    # body nose-diving under wheel reaction torque. It never supplies drive or
+    # pose measurements. Original MJCF is bit-for-bit unchanged when disabled.
+    # The contact is 2-3 mm above the nominal floor at initial wheel contact.
+    front_support = (
+        '<geom name="front_support" type="sphere" pos="0.105 0 -0.065" '
+        'size="0.020" mass="0.012" friction="0.03 0.002 0.0001" '
+        'rgba="0.25 0.25 0.25 1"/>'
+        if c.mujoco_front_support_enabled else ''
+    )
     lidar_sites='';lidar_sensors=''
     # +Z site direction is a MuJoCo rangefinder ray, rotated horizontal.
     for i,angle in enumerate(np.linspace(-math.pi,math.pi,c.lidar_beams,endpoint=False)):
@@ -68,6 +78,7 @@ def scene_xml(c: Config,s:Scenario, marker_path:Path) -> str:
             <geom name="right_wheel_geom" type="cylinder" quat="0.707107 -0.707107 0 0" size="0.033 0.010" mass="0.085" rgba="0.05 0.05 0.07 1" friction="1.8 0.002 0.0001"/>
         </body>
         <geom name="rear_castor" type="sphere" pos="-0.085 0 -0.065" size="0.020" mass="0.012" friction="0.03 0.002 0.0001" rgba="0.6 0.6 0.6 1"/>
+        {front_support}
         <site name="imu_site" pos="0 0 0.03" size="0.005"/>
         <camera name="front_camera" pos="{c.camera_offset_x_m} 0 {c.camera_height_m-0.088}" xyaxes="0 -1 0 0 0 1" fovy="{c.camera_fovy_deg}" resolution="{c.camera_width} {c.camera_height}"/>
         {lidar_sites}
