@@ -1,0 +1,58 @@
+{
+  "schema_version": 1,
+  "kind": "run",
+  "backend": "mujoco",
+  "identity": {
+    "scenario": "nominal",
+    "seed": 7
+  },
+  "archived_utc": "2026-10-16T07:24:00.432413+00:00",
+  "git_commit_at_run": "496657c9d6a6a07742372bdba63b326491a67a9b",
+  "git_commit_at_archive": "496657c9d6a6a07742372bdba63b326491a67a9b",
+  "assessment_evidence": false,
+  "potential_mujoco_evidence": true,
+  "limitations": "MuJoCo output; review scene, sensors and rendering validation independently.",
+  "reproduction_command": "python -m turtlebot_integrated.cli run --backend mujoco --scenario nominal --seed 7 --config results/mujoco/nominal_v13_seed7_success/config_snapshot.json --out outputs/reproduced_nominal_v13_seed7_success --video",
+  "file_inventory": [
+    {
+      "path": "config_snapshot.json",
+      "bytes": 1541,
+      "sha256": "2569fa9e5c28df63d80bcdb77d03f7de8db2fbca7846f33c3767504cf7cc2fac"
+    },
+    {
+      "path": "controls.png",
+      "bytes": 64687,
+      "sha256": "71a7cd7ca5a5d19f18e21d2e822b3bdc6e38559b9c624311d19cbd90a552ace8"
+    },
+    {
+      "path": "demo_capture.mp4",
+      "bytes": 827658,
+      "sha256": "1e995b20adbd5995422eaaef07fb52e1e26a8f54c72091efb7802f344c90807c"
+    },
+    {
+      "path": "estimation.png",
+      "bytes": 138667,
+      "sha256": "cb4a8c730a4774e89f32a72bfc5a4d4c819afda4882334a96ef12f6a93c36c0f"
+    },
+    {
+      "path": "run_metadata.json",
+      "bytes": 553,
+      "sha256": "396838ad3cf6f9f9a22cedc02f9767bbe20008becce6ac69d3bafc0ed606c77b"
+    },
+    {
+      "path": "summary.json",
+      "bytes": 617,
+      "sha256": "900fdea59f51472bbd7ecb88cdcaf552e9e3358e693e3c981f5713f17e47abc3"
+    },
+    {
+      "path": "trajectory.json",
+      "bytes": 246530,
+      "sha256": "924d8bbd08ceb403114b1a23ac7dd00f7c05e9747a2fec2eb18db670a9745024"
+    },
+    {
+      "path": "trajectory.png",
+      "bytes": 60553,
+      "sha256": "7a9219058a608ef6ae7393ebf75e1a5a4eaa9b26a1ed46ba5c458a43381e916f"
+    }
+  ]
+}
