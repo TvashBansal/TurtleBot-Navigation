@@ -1,0 +1,42 @@
+# v0.19 conservative estimate-side dock completion experiment.
+# Copy of the validated v0.18 configuration, plus ONLY two completion margins.
+# Does NOT alter actual strict scoring thresholds or camera LiDAR physics.
+# v0.16 obstacle-aware intermediate waypoint bypass experiment.
+# Inherits v0.13 supported chassis, odometry, EKF, controller, sensor,
+# inflation and docking tolerances unchanged. Opt-in navigation policy only.
+# v0.13: controlled comparison against v0.12, not a guaranteed calibration.
+# The supported chassis changed wheel-floor contact conditions. Re-test the
+# nominal wheel radius before retaining the old 0.0356 m odometry calibration.
+# Keep the physical model, planner, LQR, camera, safety, and scoring unchanged.
+mujoco_front_support_enabled: true
+odom_wheel_radius: 0.0330
+odom_wheel_separation: 0.1980
+use_gyro_yaw: true
+gyro_yaw_weight: 0.98
+camera_detection_mode: multiscale
+lqr_steering_scale: 0.20
+lqr_forward_heading_cutoff_rad: 1.25
+lqr_turn_kp: 1.2
+lqr_heading_speed_scheduling: true
+lqr_speed_limit_m_s: 0.15
+nav_lookahead_m: 0.55
+nav_local_capture_radius_m: 0.025
+nav_intermediate_goal_region_fallback: true
+nav_intermediate_goal_radius_m: 0.24
+# Unchanged assessment success/termination geometry
+dock_tolerance: 0.18
+max_duration: 30.0
+
+# Only skip an intermediate waypoint when both its exact/region paths fail,
+# after >= 1 s of continuous route failure, AND a safe A* path to the NEXT
+# intermediate waypoint exists. Never bypass the final docking goal.
+nav_bypass_unreachable_intermediate: true
+nav_bypass_no_route_after_s: 1.0
+
+# Require estimated docking error below 0.14 m and heading error < 0.145 rad.
+# This accounts for a measured ~1-3 cm final EKF position discrepancy while
+# keeping the separate true-pose strict scoring rule at 0.18 m / 0.18 rad.
+# Since the existing LQR controller rotates inside 0.13 m, a 0.14 m
+# completion radius should remain reachable without controller retuning.
+nav_dock_position_margin_m: 0.04
+nav_dock_heading_margin_rad: 0.035
