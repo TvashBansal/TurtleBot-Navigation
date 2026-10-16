@@ -1,0 +1,15 @@
+# v0.9 candidate: preserves v0.7 steering, gyro, odometry and LiDAR safety.
+# Small local-target capture distance lets the robot finish a nearby A* grid node.
+# Does NOT allow movement when A* has no safe route or lookahead is occluded.
+odom_wheel_radius: 0.0356
+odom_wheel_separation: 0.1980
+use_gyro_yaw: true
+gyro_yaw_weight: 0.98
+camera_detection_mode: multiscale
+lqr_steering_scale: 0.20
+lqr_forward_heading_cutoff_rad: 1.25
+lqr_turn_kp: 1.2
+lqr_heading_speed_scheduling: true
+lqr_speed_limit_m_s: 0.15
+nav_lookahead_m: 0.55
+nav_local_capture_radius_m: 0.025
