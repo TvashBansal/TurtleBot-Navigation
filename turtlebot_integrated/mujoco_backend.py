@@ -112,6 +112,20 @@ def make_mujoco_uv_marker(source: Path, destination: Path) -> Path:
     return destination
 
 
+def camera_scene_options(mujoco_module):
+    """Camera-only MuJoCo visuals: hide diagnostic rangefinder rays.
+
+    MuJoCo enables rangefinder *drawing* by default. Those yellow rays
+    overlap the physical ArUco texture in camera images and can prevent
+    OpenCV from decoding the marker. Turning off a visualization flag has
+    NO effect on ray rangefinder sensor readings or collision physics.
+    """
+    options = mujoco_module.MjvOption()
+    mujoco_module.mjv_defaultOption(options)
+    options.flags[mujoco_module.mjtVisFlag.mjVIS_RANGEFINDER] = 0
+    return options
+
+
 class MuJoCoBackend:
     def __init__(self,c:Config,s:Scenario,seed:int=7,record_camera:bool=True):
         try:
@@ -130,6 +144,9 @@ class MuJoCoBackend:
             self.model=mujoco.MjModel.from_xml_string(scene_xml(c,s,mj_marker))
         self.data=mujoco.MjData(self.model)
         self.renderer=mujoco.Renderer(self.model,height=c.camera_height,width=c.camera_width) if record_camera else None
+        # Do not render rangefinder debug rays into the image processed by
+        # ArUco. LiDAR measurements below remain physical and unchanged.
+        self.camera_scene_option = camera_scene_options(mujoco) if record_camera else None
         self.tick=0;self.time=0.0;self.collision=False
         self.disturbance_applied_steps=0
         self.scan_angles=np.linspace(-math.pi,math.pi,c.lidar_beams,endpoint=False)
@@ -154,7 +171,7 @@ class MuJoCoBackend:
 
     def render_rgb(self,camera='front_camera'):
         if self.renderer is None:return None
-        self.renderer.update_scene(self.data,camera=camera)
+        self.renderer.update_scene(self.data,camera=camera,scene_option=self.camera_scene_option)
         return self.renderer.render().copy()
 
     def observe(self):
