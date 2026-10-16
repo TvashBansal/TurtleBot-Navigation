@@ -134,7 +134,11 @@ def run_trial(cfg:Config,backend:str,scenario_name:str,seed:int,outdir:Path, cap
             planner_no_route_fraction=round(float(sum(
                 x.planner_status in {'no_astar_route','no_visible_onward_path'} for x in logs
             )/len(logs)),3),
-            steps=len(logs),warning=('KINEMATIC TEST DOUBLE ONLY; NOT ASSESSMENT SIMULATION' if backend=='kinematic' else 'MuJoCo physics and rendered-camera trial'))
+            steps=len(logs),
+            bypassed_intermediate_waypoints=list(nav.bypassed_waypoints),
+            strict_dock_position_pass=bool(position_error < cfg.dock_tolerance and not sim.collision),
+            strict_dock_pose_pass=bool(position_error < cfg.dock_tolerance and heading_error < .18 and not sim.collision),
+            warning=('KINEMATIC TEST DOUBLE ONLY; NOT ASSESSMENT SIMULATION' if backend=='kinematic' else 'MuJoCo physics and rendered-camera trial'))
         if backend=='mujoco':
             summary['disturbance_applied_steps']=int(sim.disturbance_applied_steps)
         (outdir/'summary.json').write_text(json.dumps(summary,indent=2),encoding='utf-8')

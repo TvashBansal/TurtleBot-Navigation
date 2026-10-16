@@ -29,6 +29,12 @@ class Config:
     # Disabled by default to preserve v0.9 and earlier benchmark behavior.
     nav_intermediate_goal_region_fallback: bool = False
     nav_intermediate_goal_radius_m: float = 0.24
+    # Optional obstacle-aware bypass of ONE unreachable intermediate waypoint.
+    # Only activates after exact A* AND goal-region A* fail for this duration,
+    # AND A* finds a safe route to the NEXT intermediate waypoint (never dock).
+    # Disabled by default: preserves the established nominal v0.13 baseline.
+    nav_bypass_unreachable_intermediate: bool = False
+    nav_bypass_no_route_after_s: float = 1.0
     lqr_steering_scale: float = 1.0
     lqr_forward_heading_cutoff_rad: float = 1.05
     lqr_turn_kp: float = 2.0

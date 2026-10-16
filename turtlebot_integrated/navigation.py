@@ -24,13 +24,18 @@ class Navigator:
         self.last_visible_nodes = 0
         self.last_target_distance_m = 0.0
         self.last_goal_region_fallback = False
+        self._no_route_since = None
+        self.bypassed_waypoints = []
+        self.last_waypoint_bypassed = None
 
     def tick(self,t:float,pose:np.ndarray,packet:SensorPacket):
         self.map.update(pose,packet.scan)
+        self.last_waypoint_bypassed = None
         waypoints=self.c.waypoints
         while self.idx<len(waypoints)-1 and math.dist(pose[:2],waypoints[self.idx])<self.c.nav_intermediate_goal_radius_m:
             self.idx+=1
             self.path=[]
+            self._no_route_since = None
         gx,gy=waypoints[self.idx]
         last=self.idx==len(waypoints)-1
         if last and math.dist(pose[:2],(gx,gy))<self.c.dock_tolerance and abs(wrap(pose[2]-self.c.dock_pose[2]))<.18:
@@ -54,6 +59,37 @@ class Navigator:
                 planned=self.map.plan_to_goal_region(
                     start_xy,(gx,gy),self.c.nav_intermediate_goal_radius_m)
                 self.last_goal_region_fallback = bool(planned)
+            # A deliberately blocked *intermediate* waypoint is a planning
+            # hint, not a safety barrier. After a persistent A* failure,
+            # consider ONLY the next intermediate waypoint, and only if the
+            # LiDAR-built INFLATED map yields a complete, safe A* path to it.
+            # Never skip the final dock or guess a geometric straight line.
+            if planned:
+                self._no_route_since = None
+            else:
+                if self._no_route_since is None:
+                    self._no_route_since = t
+                next_idx = self.idx + 1
+                if (self.c.nav_bypass_unreachable_intermediate
+                        and self.c.nav_intermediate_goal_region_fallback
+                        and not last and next_idx < len(waypoints)-1
+                        and t - self._no_route_since >= max(0.0, self.c.nav_bypass_no_route_after_s)):
+                    candidate = self.map.plan(start_xy, waypoints[next_idx])
+                    candidate_region = False
+                    if not candidate:
+                        candidate = self.map.plan_to_goal_region(
+                            start_xy, waypoints[next_idx],
+                            self.c.nav_intermediate_goal_radius_m)
+                        candidate_region = bool(candidate)
+                    if candidate:
+                        old_idx = self.idx
+                        self.idx = next_idx
+                        gx, gy = waypoints[self.idx]
+                        planned = candidate
+                        self.last_goal_region_fallback = candidate_region
+                        self.last_waypoint_bypassed = old_idx
+                        self.bypassed_waypoints.append(old_idx)
+                        self._no_route_since = None
             # Discard stale routes whenever replanning fails; don't continue
             # traversing a path invalidated by newly observed obstacles.
             self.path=planned
@@ -94,8 +130,9 @@ class Navigator:
                 candidates=within if within else [visible[0]]
                 beyond=[p for p in candidates if math.dist(p,pose[:2])>=self.c.nav_local_capture_radius_m]
                 target=beyond[-1] if beyond else candidates[-1]
-                self.last_planner_status=(('goal_region_path' if self.last_goal_region_fallback else 'path_following')
-                                          if beyond else 'near_path_node')
+                self.last_planner_status=(('waypoint_bypass_path' if self.last_waypoint_bypassed is not None
+                                             else 'goal_region_path' if self.last_goal_region_fallback
+                                             else 'path_following') if beyond else 'near_path_node')
             else:
                 # Fail safely if the map has no visible onward path.
                 # Force replanning on the next tick; do not drive through it.
