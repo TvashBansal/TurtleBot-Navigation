@@ -1,5 +1,6 @@
 """Environment geometry is allowed only inside simulated sensors/physics/metrics."""
 from dataclasses import dataclass
+import numpy as np
 from .types import Pose2
 from .geometry import point_rect_distance
 
@@ -12,6 +13,11 @@ class Scenario:
     camera_dropout_extra: float = 0.0
     noise_multiplier: float = 1.0
     disturbance_at: float | None = None
+    # World-frame impulse: applied as a finite-duration external force/torque
+    # in MuJoCo. A controller cannot read this schedule or the true pose.
+    disturbance_duration_s: float = 0.40
+    disturbance_force_y_n: float = 0.90
+    disturbance_yaw_torque_nm: float = 0.025
     # World boundaries 5 x 4 meters. Keep visual marker fixed (1.82, 0).
     bounds: tuple[float,float,float,float] = (-2.4, 2.4, -2.0, 2.0)
 
@@ -33,4 +39,17 @@ def get_scenario(name: str, seed: int=7) -> Scenario:
         wheel_slip=.045 if name in {'disturbance','noise'} else 0,
         camera_dropout_extra=.35 if name=='camera_loss' else 0,
         noise_multiplier=2.5 if name=='noise' else 1.0,
-        disturbance_at=26.0 if name=='disturbance' else None)
+        disturbance_at=9.0 if name=='disturbance' else None)
+
+
+def disturbance_wrench_world(scenario: Scenario, time_s: float) -> np.ndarray:
+    """MuJoCo body wrench [Fx,Fy,Fz,Mx,My,Mz] in the WORLD frame.
+
+    Returns zero for all non-disturbance scenarios and when outside the
+    specified finite-duration interval. Never exposed to the controller.
+    """
+    start = scenario.disturbance_at
+    if start is None or not (start <= time_s < start + scenario.disturbance_duration_s):
+        return np.zeros(6, dtype=float)
+    return np.array([0.0, scenario.disturbance_force_y_n, 0.0,
+                     0.0, 0.0, scenario.disturbance_yaw_torque_nm], dtype=float)

@@ -9,7 +9,7 @@ import cv2
 import numpy as np
 from .config import Config
 from .camera import make_marker, marker_from_rgb
-from .scenarios import Scenario
+from .scenarios import Scenario, disturbance_wrench_world
 from .types import Scan,SensorPacket
 
 
@@ -131,6 +131,7 @@ class MuJoCoBackend:
         self.data=mujoco.MjData(self.model)
         self.renderer=mujoco.Renderer(self.model,height=c.camera_height,width=c.camera_width) if record_camera else None
         self.tick=0;self.time=0.0;self.collision=False
+        self.disturbance_applied_steps=0
         self.scan_angles=np.linspace(-math.pi,math.pi,c.lidar_beams,endpoint=False)
         self.left_sid=mujoco.mj_name2id(self.model,mujoco.mjtObj.mjOBJ_SENSOR,'enc_left')
         self.right_sid=mujoco.mj_name2id(self.model,mujoco.mjtObj.mjOBJ_SENSOR,'enc_right')
@@ -184,6 +185,13 @@ class MuJoCoBackend:
         v=float(np.clip(v,-c.max_speed,c.max_speed));w=float(np.clip(w,-c.max_omega,c.max_omega))
         self.data.ctrl[0]=(v-w*c.wheel_separation/2)/c.wheel_radius
         self.data.ctrl[1]=(v+w*c.wheel_separation/2)/c.wheel_radius
+        # A real physical force/torque acts on the chassis, not a teleport,
+        # spoofed sensor sample, or direct EKF/controller manipulation.
+        # Zero the wrench outside its scheduled window to avoid persistence.
+        wrench=disturbance_wrench_world(self.s,self.time)
+        self.data.xfrc_applied[self.body_id,:]=wrench
+        if np.any(wrench):
+            self.disturbance_applied_steps+=1
         n=int(round(c.dt/self.model.opt.timestep))
         for _ in range(n):self.mj.mj_step(self.model,self.data)
         self.time=float(self.data.time);self.tick+=1

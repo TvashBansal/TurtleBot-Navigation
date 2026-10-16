@@ -135,6 +135,8 @@ def run_trial(cfg:Config,backend:str,scenario_name:str,seed:int,outdir:Path, cap
                 x.planner_status in {'no_astar_route','no_visible_onward_path'} for x in logs
             )/len(logs)),3),
             steps=len(logs),warning=('KINEMATIC TEST DOUBLE ONLY; NOT ASSESSMENT SIMULATION' if backend=='kinematic' else 'MuJoCo physics and rendered-camera trial'))
+        if backend=='mujoco':
+            summary['disturbance_applied_steps']=int(sim.disturbance_applied_steps)
         (outdir/'summary.json').write_text(json.dumps(summary,indent=2),encoding='utf-8')
         (outdir/'trajectory.json').write_text(json.dumps([asdict(a) for a in logs]),encoding='utf-8')
         from .reporting import plot_trial
