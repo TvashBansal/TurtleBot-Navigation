@@ -19,6 +19,10 @@ class Navigator:
         self.last_stop_reason = 'not_started'
         self.last_front_clearance_m = float('inf')
         self.last_target_bearing_rad = 0.0
+        self.last_planner_status = 'not_started'
+        self.last_path_nodes = 0
+        self.last_visible_nodes = 0
+        self.last_target_distance_m = 0.0
 
     def tick(self,t:float,pose:np.ndarray,packet:SensorPacket):
         self.map.update(pose,packet.scan)
@@ -31,6 +35,7 @@ class Navigator:
         if last and math.dist(pose[:2],(gx,gy))<self.c.dock_tolerance and abs(wrap(pose[2]-self.c.dock_pose[2]))<.18:
             self.done=True
             self.last_stop_reason='goal_reached'
+            self.last_planner_status='goal_reached'
             return (0.0,0.0),(gx,gy)
         if t-self.last_plan_t>1.0 or not self.path:
             self.last_plan_t=t
@@ -42,6 +47,9 @@ class Navigator:
         # With no A* route, do not drive directly at the goal through an
         # unverified corridor; wait for the next replan.
         target=(float(pose[0]),float(pose[1]))
+        self.last_planner_status='no_astar_route' if not self.path else 'path_found'
+        self.last_path_nodes=len(self.path)
+        self.last_visible_nodes=0
         if self.path:
             mask=self.map.obstacles()
             # The first 3x3 cells were deliberately cleared by A* when the
@@ -60,18 +68,31 @@ class Navigator:
                     # to reach a farther target.
                     break
                 visible.append(p)
+            self.last_visible_nodes=len(visible)
             if visible:
+                # Prefer an onward grid node outside the controller's capture
+                # radius, but only along a *directly clear* segment. This avoids
+                # needlessly selecting a node that the controller already regards
+                # as reached; never jump through a mapped obstacle.
                 within=[p for p in visible if math.dist(p,pose[:2])<=self.c.nav_lookahead_m]
-                target=within[-1] if within else visible[0]
+                candidates=within if within else [visible[0]]
+                beyond=[p for p in candidates if math.dist(p,pose[:2])>=self.c.nav_local_capture_radius_m]
+                target=beyond[-1] if beyond else candidates[-1]
+                self.last_planner_status=('path_following' if beyond else 'near_path_node')
             else:
                 # Fail safely if the map has no visible onward path.
                 # Force replanning on the next tick; do not drive through it.
                 self.path=[]
                 self.last_plan_t=-1e9
                 target=(float(pose[0]),float(pose[1]))
+                self.last_planner_status='no_visible_onward_path'
         if last and math.dist(pose[:2],(gx,gy))<.35:
+            # Last-stage docking uses goal position/heading, not a map
+            # shortcut far across obstacles.
             target=(gx,gy)
+            self.last_planner_status='final_docking'
         heading=self.c.dock_pose[2] if last and math.dist(pose[:2],(gx,gy))<.3 else None
+        self.last_target_distance_m=math.dist(target,pose[:2])
         self.last_target_bearing_rad=wrap(math.atan2(target[1]-pose[1],target[0]-pose[0])-pose[2])
         v,w=self.controller.track(pose,target,heading)
         self.last_stop_reason='controller_turn' if v<1e-6 and abs(w)>1e-6 else (
