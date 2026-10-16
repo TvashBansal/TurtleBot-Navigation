@@ -44,15 +44,16 @@ class Navigator:
             planned=self.map.plan(start_xy,(gx,gy))
             self.last_goal_region_fallback = False
             if not planned and not last and self.c.nav_intermediate_goal_region_fallback:
-                # Only fall back if the *intermediate goal cell itself* is
-                # occupied by the inflated LiDAR mask. A genuine disconnected
-                # route must remain a safe stop, not a recovery shortcut.
-                goal_cell=self.map.xy_to_cell(gx,gy)
-                occupied=self.map.obstacles()
-                if self.map.inbounds(goal_cell) and occupied[goal_cell[1],goal_cell[0]]:
-                    planned=self.map.plan_to_goal_region(
-                        start_xy,(gx,gy),self.c.nav_intermediate_goal_radius_m)
-                    self.last_goal_region_fallback = bool(planned)
+                # A* can fail even when the nominal waypoint cell is free:
+                # the cell may be surrounded by inflated obstacles. Try a
+                # bounded, FREE and REACHABLE cell within the intermediate
+                # waypoint's configured capture radius. The region planner
+                # applies the same obstacle mask and no-corner-cutting rule.
+                # If the region is disconnected/blocked, it returns [] and
+                # navigation safely holds; no direct-goal shortcut is used.
+                planned=self.map.plan_to_goal_region(
+                    start_xy,(gx,gy),self.c.nav_intermediate_goal_radius_m)
+                self.last_goal_region_fallback = bool(planned)
             # Discard stale routes whenever replanning fails; don't continue
             # traversing a path invalidated by newly observed obstacles.
             self.path=planned
