@@ -66,6 +66,11 @@ class Config:
     map_inflation: float = 0.16
     max_duration: float = 100.0
     dock_tolerance: float = 0.18
+    # v0.19 optional conservative terminal goal *stopping* margins.
+    # These do not change the experiment's truth-based scoring threshold.
+    # Zero preserves the established v0.18 navigator behaviour.
+    nav_dock_position_margin_m: float = 0.0
+    nav_dock_heading_margin_rad: float = 0.0
     seed: int = 7
     marker_xy: tuple[float,float] = (1.82, 0.0)
     dock_pose: tuple[float,float,float] = (1.35, 0.0, 0.0)

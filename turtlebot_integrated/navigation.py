@@ -10,6 +10,12 @@ from .types import SensorPacket
 class Navigator:
     def __init__(self,c:Config):
         self.c=c
+        # Completion margins are a conservative estimate-side policy only.
+        # They must not make the goal unreachable or relax assessment scoring.
+        if not 0.0 <= c.nav_dock_position_margin_m < c.dock_tolerance:
+            raise ValueError('nav_dock_position_margin_m must be within [0, dock_tolerance)')
+        if not 0.0 <= c.nav_dock_heading_margin_rad < 0.18:
+            raise ValueError('nav_dock_heading_margin_rad must be within [0, 0.18)')
         self.controller=LQRTracker(c)
         self.map=OccupancyMap(c)
         self.idx=0
@@ -38,7 +44,14 @@ class Navigator:
             self._no_route_since = None
         gx,gy=waypoints[self.idx]
         last=self.idx==len(waypoints)-1
-        if last and math.dist(pose[:2],(gx,gy))<self.c.dock_tolerance and abs(wrap(pose[2]-self.c.dock_pose[2]))<.18:
+        # Stop using the ESTIMATED pose only. Leave room for residual EKF
+        # error before reaching the separately scored true-pose tolerances.
+        # The final docking target, hardware sensor policy and scoring code
+        # are unchanged. Legacy configs have zero margin by default.
+        completion_distance = self.c.dock_tolerance - self.c.nav_dock_position_margin_m
+        completion_heading = 0.18 - self.c.nav_dock_heading_margin_rad
+        if (last and math.dist(pose[:2], (gx,gy)) < completion_distance
+                and abs(wrap(pose[2] - self.c.dock_pose[2])) < completion_heading):
             self.done=True
             self.last_stop_reason='goal_reached'
             self.last_planner_status='goal_reached'
