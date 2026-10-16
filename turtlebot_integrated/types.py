@@ -51,3 +51,7 @@ class StepLog:
     front_clearance_m: float | None = None
     waypoint_index: int | None = None
     target_heading_error_rad: float | None = None
+    planner_status: str | None = None
+    planner_path_nodes: int | None = None
+    planner_visible_nodes: int | None = None
+    planner_target_distance_m: float | None = None

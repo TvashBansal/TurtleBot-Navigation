@@ -17,7 +17,7 @@ class LQRTracker:
         distance=math.hypot(dx,dy)
         if distance < 0.13 and final_heading is not None:
             return 0.0,float(np.clip(2.0*wrap(final_heading-estimate[2]),-self.c.max_omega,self.c.max_omega))
-        if distance < 0.08:
+        if distance < self.c.nav_local_capture_radius_m:
             return 0.0,0.0
         theta_target=math.atan2(dy,dx)
         angle=wrap(theta_target-estimate[2])

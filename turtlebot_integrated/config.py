@@ -22,6 +22,9 @@ class Config:
     max_omega: float = 1.6
     # Optional v0.7 LQR waypoint-tracking experiment. Defaults preserve v0.6.
     nav_lookahead_m: float = 0.33
+    # Optional small local grid-node capture radius (v0.9 experiment).
+    # Default preserves old 0.08 m controller behavior.
+    nav_local_capture_radius_m: float = 0.08
     lqr_steering_scale: float = 1.0
     lqr_forward_heading_cutoff_rad: float = 1.05
     lqr_turn_kp: float = 2.0

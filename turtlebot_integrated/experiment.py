@@ -94,7 +94,11 @@ def run_trial(cfg:Config,backend:str,scenario_name:str,seed:int,outdir:Path, cap
                 front_clearance_m=(nav.last_front_clearance_m
                                    if math.isfinite(nav.last_front_clearance_m) else None),
                 waypoint_index=nav.idx,
-                target_heading_error_rad=nav.last_target_bearing_rad))
+                target_heading_error_rad=nav.last_target_bearing_rad,
+                planner_status=nav.last_planner_status,
+                planner_path_nodes=nav.last_path_nodes,
+                planner_visible_nodes=nav.last_visible_nodes,
+                planner_target_distance_m=nav.last_target_distance_m))
             if writer is not None and k%6==0:
                 try:
                     from .video import diagnostic_frame
@@ -114,6 +118,8 @@ def run_trial(cfg:Config,backend:str,scenario_name:str,seed:int,outdir:Path, cap
         position_error=float(np.linalg.norm(endtruth[:2]-goal[:2]))
         heading_error=abs(wrap(endtruth[2]-goal[2]))
         success=bool(nav.done and position_error<cfg.dock_tolerance+.06 and heading_error<.25 and not sim.collision)
+        from collections import Counter
+        planner_counts=Counter(x.planner_status for x in logs)
         summary=dict(backend=backend,scenario=scenario_name,seed=seed,success=success,
             planner_reported_done=bool(nav.done),collision=bool(sim.collision),
             duration_s=round(sim.time,3),position_error_m=round(position_error,4),
@@ -124,6 +130,10 @@ def run_trial(cfg:Config,backend:str,scenario_name:str,seed:int,outdir:Path, cap
             measurements=int(sum(x.camera_seen for x in logs)),
             accepted_camera_updates=int(sum(x.camera_update_accepted for x in logs)),
             gyro_used_steps=int(sum(x.gyro_used for x in logs)),
+            planner_states=dict(planner_counts),
+            planner_no_route_fraction=round(float(sum(
+                x.planner_status in {'no_astar_route','no_visible_onward_path'} for x in logs
+            )/len(logs)),3),
             steps=len(logs),warning=('KINEMATIC TEST DOUBLE ONLY; NOT ASSESSMENT SIMULATION' if backend=='kinematic' else 'MuJoCo physics and rendered-camera trial'))
         (outdir/'summary.json').write_text(json.dumps(summary,indent=2),encoding='utf-8')
         (outdir/'trajectory.json').write_text(json.dumps([asdict(a) for a in logs]),encoding='utf-8')
