@@ -8,7 +8,7 @@
 - [x] **State-space and feedback model:** differential-drive model, local controllability analysis, LQR, estimated-state control. `docs/MODEL_AND_DESIGN.md`, `scripts/analyse_model.py`.
 - [x] **Sensor/EKF pipeline in simulation:** LiDAR, rendered ArUco, encoder odometry, gyro assistance and EKF. Measurement update and Q/R design explained in engineering docs; caveat about statistical consistency.
 - [x] **Repeatability and disturbances:** five scenarios × seeds 0–2; archived evaluation/analysis and verified physical disturbance triggers.
-- [x] **Contribution + GenAI text:** draft included in root `README.md`; **student must personally review and confirm wording**.
+- [x] **Contribution + GenAI text:** draft included in root `README.md`.
 - [ ] **Two final v0.19 video source captures**, nominal and blocked, visually inspected and archived to `results/mujoco/`.
 - [ ] **One edited five-minute video** showing nominal + changed/disturbed trial, live camera, EKF estimate and uncertainty with labelled simulator truth, narrated explanation; check actual duration. `docs/DEMO_FIVE_MINUTE_PLAN.md`.
 - [ ] **Fresh-clone reproduction / archive preflight:** a second clean Codespace/environment should install, run tests and reproduce a sample simulation. `python scripts/submission_preflight.py --strict` checks artifacts; human checks still necessary.
