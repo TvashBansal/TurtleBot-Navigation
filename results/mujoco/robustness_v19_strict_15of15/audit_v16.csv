@@ -1,0 +1,16 @@
+scenario,seed,success,strict_dock_position_pass,strict_dock_pose_pass,collision,duration_s,position_error_m,heading_error_rad,accepted_camera_updates,planner_no_route_fraction,bypassed_intermediate_waypoints,disturbance_applied_steps
+nominal,0,True,True,True,False,22.88,0.145,0.1502,46,0.0,[],0
+nominal,1,True,True,True,False,22.96,0.1384,0.1411,43,0.0,[],0
+nominal,2,True,True,True,False,22.88,0.1425,0.1439,45,0.0,[],0
+noise,0,True,True,True,False,23.12,0.1402,0.1192,39,0.0,[],0
+noise,1,True,True,True,False,22.88,0.1441,0.1328,44,0.0,[],0
+noise,2,True,True,True,False,22.96,0.1265,0.1675,48,0.0,[],0
+blocked,0,True,True,True,False,24.24,0.1531,0.0225,32,0.043,[1],0
+blocked,1,True,True,True,False,24.16,0.1514,0.0117,32,0.043,[1],0
+blocked,2,True,True,True,False,24.32,0.1572,0.0373,35,0.043,[1],0
+disturbance,0,True,True,True,False,22.96,0.1364,0.1381,46,0.0,[],5
+disturbance,1,True,True,True,False,22.88,0.1449,0.1363,43,0.0,[],5
+disturbance,2,True,True,True,False,22.88,0.1413,0.1443,45,0.0,[],5
+camera_loss,0,True,True,True,False,22.88,0.1431,0.1541,28,0.0,[],0
+camera_loss,1,True,True,True,False,22.88,0.1431,0.1346,23,0.0,[],0
+camera_loss,2,True,True,True,False,23.04,0.1402,0.1465,29,0.0,[],0

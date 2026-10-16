@@ -1,0 +1,25 @@
+{
+  "backend": "mujoco",
+  "seeds": 3,
+  "scenarios": [
+    "nominal",
+    "noise",
+    "blocked",
+    "disturbance",
+    "camera_loss"
+  ],
+  "created_utc": "2026-10-16T09:50:34.383389+00:00",
+  "git_commit_at_run": "894644029b2aac45e83b999b1dacf318f575713a",
+  "dependencies": {
+    "numpy": "2.4.6",
+    "scipy": "1.17.1",
+    "matplotlib": "3.11.2",
+    "mujoco": "3.16.0",
+    "opencv-contrib-python": "4.14.0.94",
+    "imageio": "2.38.1"
+  },
+  "video_requested": false,
+  "reconstructed_from_individual_runs": true,
+  "created_utc_basis": "Earliest recorded trial start time",
+  "metadata_reconstructed_utc": "2026-10-16T10:04:45.877724+00:00"
+}

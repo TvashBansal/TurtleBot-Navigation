@@ -1,0 +1,30 @@
+{
+  "backend": "mujoco",
+  "scenario": "camera_loss",
+  "seed": 1,
+  "success": true,
+  "planner_reported_done": true,
+  "collision": false,
+  "duration_s": 22.88,
+  "position_error_m": 0.1431,
+  "heading_error_rad": 0.1346,
+  "rmse_x_m": 0.0314,
+  "rmse_y_m": 0.0205,
+  "rmse_heading_rad": 0.031,
+  "camera_detection_rate": 0.08,
+  "measurements": 23,
+  "accepted_camera_updates": 23,
+  "gyro_used_steps": 285,
+  "planner_states": {
+    "path_following": 265,
+    "final_docking": 20,
+    "goal_reached": 1
+  },
+  "planner_no_route_fraction": 0.0,
+  "steps": 286,
+  "bypassed_intermediate_waypoints": [],
+  "strict_dock_position_pass": true,
+  "strict_dock_pose_pass": true,
+  "warning": "MuJoCo physics and rendered-camera trial",
+  "disturbance_applied_steps": 0
+}

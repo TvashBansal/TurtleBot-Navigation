@@ -1,0 +1,104 @@
+{
+  "backend": "mujoco",
+  "count": 15,
+  "dock_tolerance_m": 0.18,
+  "strict_heading_tolerance_rad": 0.18,
+  "seed_sets": {
+    "nominal": [
+      0,
+      1,
+      2
+    ],
+    "noise": [
+      0,
+      1,
+      2
+    ],
+    "blocked": [
+      0,
+      1,
+      2
+    ],
+    "disturbance": [
+      0,
+      1,
+      2
+    ],
+    "camera_loss": [
+      0,
+      1,
+      2
+    ]
+  },
+  "audit_valid": true,
+  "audit_failures": [],
+  "per_scenario": [
+    {
+      "scenario": "nominal",
+      "trials": 3,
+      "reported_successes": 3,
+      "strict_position_passes": 3,
+      "strict_pose_passes": 3,
+      "collisions": 0,
+      "bypass_trials": 0,
+      "mean_goal_error_m": 0.142,
+      "mean_no_route_fraction": 0.0,
+      "mean_camera_updates": 44.67,
+      "disturbance_confirmed": 0
+    },
+    {
+      "scenario": "noise",
+      "trials": 3,
+      "reported_successes": 3,
+      "strict_position_passes": 3,
+      "strict_pose_passes": 3,
+      "collisions": 0,
+      "bypass_trials": 0,
+      "mean_goal_error_m": 0.1369,
+      "mean_no_route_fraction": 0.0,
+      "mean_camera_updates": 43.67,
+      "disturbance_confirmed": 0
+    },
+    {
+      "scenario": "blocked",
+      "trials": 3,
+      "reported_successes": 3,
+      "strict_position_passes": 3,
+      "strict_pose_passes": 3,
+      "collisions": 0,
+      "bypass_trials": 3,
+      "mean_goal_error_m": 0.1539,
+      "mean_no_route_fraction": 0.043,
+      "mean_camera_updates": 33,
+      "disturbance_confirmed": 0
+    },
+    {
+      "scenario": "disturbance",
+      "trials": 3,
+      "reported_successes": 3,
+      "strict_position_passes": 3,
+      "strict_pose_passes": 3,
+      "collisions": 0,
+      "bypass_trials": 0,
+      "mean_goal_error_m": 0.1409,
+      "mean_no_route_fraction": 0.0,
+      "mean_camera_updates": 44.67,
+      "disturbance_confirmed": 3
+    },
+    {
+      "scenario": "camera_loss",
+      "trials": 3,
+      "reported_successes": 3,
+      "strict_position_passes": 3,
+      "strict_pose_passes": 3,
+      "collisions": 0,
+      "bypass_trials": 0,
+      "mean_goal_error_m": 0.1421,
+      "mean_no_route_fraction": 0.0,
+      "mean_camera_updates": 26.67,
+      "disturbance_confirmed": 0
+    }
+  ],
+  "scoring_note": "Experiment success uses dock_tolerance + 0.06 m and heading < 0.25 rad; strict criteria shown separately.",
+  "caveat": "Physical chassis front support is an experimental simulation approximation."
+}
