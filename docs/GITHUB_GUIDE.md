@@ -75,5 +75,3 @@ python scripts/reproduce_archive.py results/kinematic/nominal_seed7_software_bas
 After real physics trials are committed, replace the final path with `results/mujoco/<experiment-name>`.
 
 **Caution:** a reproduction runs the code currently checked out. `manifest.json` stores the source commit when the run was originally made; checking out that revision (when present) is needed for rigorous code-version comparisons. The initially archived software samples were made before a Git revision was available in the packaging environment; subsequent runs inside Codespaces will record it.
-
-Before submission: review/update the contribution and AI-use statements, inspect results, publish the repo if required, and include the GitHub link and five-minute video in Canvas.
