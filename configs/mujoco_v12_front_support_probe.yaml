@@ -1,0 +1,19 @@
+# v0.12 MuJoCo-only chassis-attitude experiment. Same v0.11 navigation and
+# estimation parameters; changes only a low-friction passive contact sphere.
+# NOT an exact TurtleBot3 CAD model; experimental mechanical simplification.
+mujoco_front_support_enabled: true
+odom_wheel_radius: 0.0356
+odom_wheel_separation: 0.1980
+use_gyro_yaw: true
+gyro_yaw_weight: 0.98
+camera_detection_mode: multiscale
+lqr_steering_scale: 0.20
+lqr_forward_heading_cutoff_rad: 1.25
+lqr_turn_kp: 1.2
+lqr_heading_speed_scheduling: true
+lqr_speed_limit_m_s: 0.15
+nav_lookahead_m: 0.55
+nav_local_capture_radius_m: 0.025
+nav_intermediate_goal_region_fallback: true
+nav_intermediate_goal_radius_m: 0.24
+max_duration: 30.0
