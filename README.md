@@ -4,8 +4,6 @@
 **Validated simulation baseline: `configs/mujoco_v19_precision_trial.yaml`**  
 **Status:** MuJoCo simulation validated across 15 recorded trials; **physical TurtleBot3 NOT tested**.
 
-- **[Watch the Final 5-Minute Demonstration (YouTube)](https://youtu.be/iJr2u0MG8AM)** — Narrated MuJoCo demonstration of TurtleBot3 autonomous navigation, including nominal and blocked scenarios, A* path planning, EKF state estimation, LQR control, LiDAR obstacle detection, ArUco docking, and quantitative results. Duration: 4 minutes 31 seconds. Simulation only; physical hardware not tested.
-
 > **Measured evidence, not a hardware claim.** In the committed v0.19 MuJoCo archive, 15/15 runs completed the task under the simulator's acceptance criterion **and** met the stricter 0.18 m / 0.18 rad docking-pose requirements, with zero reported collisions. Results apply only to five scenarios × seeds 0–2, with the specified simulated geometry, tuning and disturbances. A reported success rate of 100% in 15 trials does not guarantee perfect reliability elsewhere.
 
 ## Watch and verify
@@ -16,6 +14,7 @@
 - **[Archived blocked MuJoCo video](results/mujoco/blocked_v18_seed0_success/demo_capture.mp4)** — earlier camera-assisted blocked result, **not** the final v0.19 configuration
 - **[Five-minute v0.19 demo production plan](docs/DEMO_FIVE_MINUTE_PLAN.md)** — generate and archive final-configuration MP4s and produce a five-minute edited video; provide the completed video link in the final submission
 - **[Hardware preparation and limitations](docs/HARDWARE_READINESS_V19.md)** — ROS 2 interface exists but real-robot operation has not been demonstrated
+- **[Watch the Final 5-Minute Demonstration (YouTube)](https://youtu.be/iJr2u0MG8AM)** — Narrated MuJoCo demonstration of TurtleBot3 autonomous navigation, including nominal and blocked scenarios, A* path planning, EKF state estimation, LQR control, LiDAR obstacle detection, ArUco docking, and quantitative results. Duration: 4 minutes 31 seconds. Simulation only; physical hardware not tested.
 
 ### Summary from 15 actual MuJoCo runs
 
