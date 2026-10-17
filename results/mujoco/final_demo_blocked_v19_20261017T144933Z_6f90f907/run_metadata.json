@@ -1,0 +1,19 @@
+{
+  "backend": "mujoco",
+  "scenario": "blocked",
+  "seed": 0,
+  "created_utc": "2026-10-17T14:49:54.932090+00:00",
+  "git_commit_at_run": "74d72926b67918a53fb067881ce59b82a46ef4d7",
+  "python": "3.11.13",
+  "platform": "Linux-6.8.0-1064-azure-x86_64-with-glibc2.36",
+  "dependencies": {
+    "numpy": "2.4.6",
+    "scipy": "1.17.1",
+    "matplotlib": "3.11.2",
+    "mujoco": "3.16.0",
+    "opencv-contrib-python": "4.14.0.94",
+    "imageio": "2.38.1"
+  },
+  "video_requested": true,
+  "sensor_note": "MuJoCo: rendered RGB image and simulated sensors"
+}
