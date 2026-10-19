@@ -1,0 +1,58 @@
+{
+  "schema_version": 1,
+  "kind": "run",
+  "backend": "mujoco",
+  "identity": {
+    "scenario": "blocked",
+    "seed": 0
+  },
+  "archived_utc": "2026-10-19T03:36:28.127873+00:00",
+  "git_commit_at_run": "e8e6fc043c50a6d1be47c83a237aed70e7235ef6",
+  "git_commit_at_archive": "e8e6fc043c50a6d1be47c83a237aed70e7235ef6",
+  "assessment_evidence": false,
+  "potential_mujoco_evidence": true,
+  "limitations": "MuJoCo output; review scene, sensors and rendering validation independently.",
+  "reproduction_command": "python -m turtlebot_integrated.cli run --backend mujoco --scenario blocked --seed 0 --config results/mujoco/final_demo_blocked_v19_20261019T033403Z_df425f21/config_snapshot.json --out outputs/reproduced_final_demo_blocked_v19_20261019T033403Z_df425f21 --video",
+  "file_inventory": [
+    {
+      "path": "config_snapshot.json",
+      "bytes": 1704,
+      "sha256": "e256c6b27a627704e4263aace2d436df814a72d99b445d894630cc40e34e74e0"
+    },
+    {
+      "path": "controls.png",
+      "bytes": 70217,
+      "sha256": "5100ac175114877d521877e0f0db2d0f55d96c9ee9244ec69cb08435e32f6898"
+    },
+    {
+      "path": "demo_capture.mp4",
+      "bytes": 281841,
+      "sha256": "cdcf41e89adf9520e8742f71e75447b60ccfb6d7c6780a96219df90984ce6cee"
+    },
+    {
+      "path": "estimation.png",
+      "bytes": 146725,
+      "sha256": "a9a2ecbf0673285d1644833b19a06e86ea90e004068a340527735b768042ef21"
+    },
+    {
+      "path": "run_metadata.json",
+      "bytes": 553,
+      "sha256": "8c1c3ecf5c9449eb00bae61d60bea721d2d8f82d2da7e4478ce2420928e7b8ca"
+    },
+    {
+      "path": "summary.json",
+      "bytes": 833,
+      "sha256": "7283cdb7b387260a36159d49e617bcbc87d832a84d7e95a9cf28a35fbc947391"
+    },
+    {
+      "path": "trajectory.json",
+      "bytes": 267771,
+      "sha256": "3da72224bc25ddca6bba0228f006c37b75f148447e19b766850f2610bfe9b058"
+    },
+    {
+      "path": "trajectory.png",
+      "bytes": 60100,
+      "sha256": "70a3ae5a5f31ab34aca53fee704c54c4b6167116851c8a27aae0b2c099436fac"
+    }
+  ]
+}

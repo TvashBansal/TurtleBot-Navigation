@@ -1,0 +1,58 @@
+{
+  "schema_version": 1,
+  "kind": "run",
+  "backend": "mujoco",
+  "identity": {
+    "scenario": "nominal",
+    "seed": 0
+  },
+  "archived_utc": "2026-10-19T03:36:28.047863+00:00",
+  "git_commit_at_run": "e8e6fc043c50a6d1be47c83a237aed70e7235ef6",
+  "git_commit_at_archive": "e8e6fc043c50a6d1be47c83a237aed70e7235ef6",
+  "assessment_evidence": false,
+  "potential_mujoco_evidence": true,
+  "limitations": "MuJoCo output; review scene, sensors and rendering validation independently.",
+  "reproduction_command": "python -m turtlebot_integrated.cli run --backend mujoco --scenario nominal --seed 0 --config results/mujoco/final_demo_nominal_v19_20261019T033403Z_df425f21/config_snapshot.json --out outputs/reproduced_final_demo_nominal_v19_20261019T033403Z_df425f21 --video",
+  "file_inventory": [
+    {
+      "path": "config_snapshot.json",
+      "bytes": 1704,
+      "sha256": "e256c6b27a627704e4263aace2d436df814a72d99b445d894630cc40e34e74e0"
+    },
+    {
+      "path": "controls.png",
+      "bytes": 68334,
+      "sha256": "b794ad41d4851010a832c18d1703390ef8aaa68cd9375541b5dcd31ec5ec157c"
+    },
+    {
+      "path": "demo_capture.mp4",
+      "bytes": 268166,
+      "sha256": "0d2a3bab4f99c1016f19f8686381bcb8f111f2893c80688051881e0f00fee921"
+    },
+    {
+      "path": "estimation.png",
+      "bytes": 143865,
+      "sha256": "bb179bc74c9f07375547c68007112ddfc51b54e69f3e165946be0a6a156d3282"
+    },
+    {
+      "path": "run_metadata.json",
+      "bytes": 553,
+      "sha256": "18d95d90b85a4c829912eacf7bb0bb0fae931ce7861fb9d077fcdfa13e54e45a"
+    },
+    {
+      "path": "summary.json",
+      "bytes": 764,
+      "sha256": "a5d479141ad631e1d38af7db947eee67d39f39c330b8949fcfbe7489718ecbd5"
+    },
+    {
+      "path": "trajectory.json",
+      "bytes": 252374,
+      "sha256": "519330ba2e3cfb2fef561abd245de45112b644095c55ffd77a560121dacc5e0d"
+    },
+    {
+      "path": "trajectory.png",
+      "bytes": 59553,
+      "sha256": "5744066e5260c8eb7457cdfc576147e4088220ec96c5765a4ad3cb37434b0c07"
+    }
+  ]
+}
